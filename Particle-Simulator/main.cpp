@@ -8,7 +8,7 @@ public:
     double radius;
 
     Particle(double x, double y, double vx, double vy, double radius)
-        : x(x), y(y), vx(vx), vy(vy), radius(radius) {}
+        : x(x), y(y), vx(vx), vy(-vy), radius(radius) {}
 
     void updatePosition(double deltaTime, double simWidth, double simHeight) {
         // Update position based on velocity
@@ -56,7 +56,8 @@ int main() {
     Simulation sim(800, 600);
 
     // Example: Add a particle
-    sim.addParticle(Particle(400, 300, -2, -2, 10));
+    sim.addParticle(Particle(400, 300, -2, 2, 10));
+   //sim.addParticle(Particle(200, 100, 10, 10, 10));
 
     while (window.isOpen()) {
         sf::Event event;
