@@ -1,32 +1,48 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 class Particle {
 public:
     double x, y; // Position
-    double vx, vy; // Velocity
+    double theta; // Initial angle in degrees (0 degrees is east, increases anticlockwise)
+    double v; // Velocity in pixels per second
     double radius;
 
-    Particle(double x, double y, double vx, double vy, double radius)
-        : x(x), y(y), vx(vx), vy(-vy), radius(radius) {}
+    Particle(double x, double y, double theta, double v, double radius)
+        : x(x), y(y), theta(theta), v(v), radius(radius) {}
 
     void updatePosition(double deltaTime, double simWidth, double simHeight) {
-        // Update position based on velocity
-        x += vx * deltaTime;
-        y += vy * deltaTime;
+        // Convert angle to radians
+        double thetaRad = theta * 3.14159265358979323846 / 180.0;
+
+        // Update position based on velocity and angle
+        x += v * std::cos(thetaRad) * deltaTime;
+        y += v * std::sin(thetaRad) * deltaTime;
 
         // Check for collisions with the simulation boundaries
         if (x - radius < 0 || x + radius > simWidth) { // Left or right wall collision
-            vx = -vx; // Invert velocity in x-direction
-            x = (x - radius < 0) ? radius : simWidth - radius; // Correct position to stay within bounds
+            // Reflect particle off the left or right wall
+            theta = 180.0 - theta;
+
+            // Ensure the angle is within the range [0, 360)
+            if (theta < 0.0)
+                theta += 360.0;
+
+            x = std::max(radius, std::min(x, simWidth - radius)); // Correct position to stay within bounds
         }
         if (y - radius < 0 || y + radius > simHeight) { // Top or bottom wall collision
-            vy = -vy; // Invert velocity in y-direction
-            y = (y - radius < 0) ? radius : simHeight - radius; // Correct position to stay within bounds
+            // Reflect particle off the top or bottom wall
+            theta = 360.0 - theta;
+
+            // Ensure the angle is within the range [0, 360)
+            if (theta >= 360.0)
+                theta -= 360.0;
+
+            y = std::max(radius, std::min(y, simHeight - radius)); // Correct position to stay within bounds
         }
     }
-
 };
 
 class Simulation {
@@ -55,7 +71,7 @@ public:
 int main() {
     sf::RenderWindow window(sf::VideoMode(800, 600), "Particle Simulator");
     Simulation sim(800, 600);
-
+    //sim.addParticle(Particle(0, 0, 270, 10, 3));
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -63,16 +79,17 @@ int main() {
                 window.close();
         }
 
+       
         sim.simulate(0.01); // Advance the simulation
 
         // Input handling outside the event loop
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            double x, y, vx, vy, radius;
+            double x, y, theta, v, radius;
 
-            std::cout << "Enter x, y, vx, vy, radius for the new particle: ";
-            std::cin >> x >> y >> vx >> vy >> radius;
+            std::cout << "Enter x, y, theta, v, radius for the new particle: ";
+            std::cin >> x >> y >> theta >> v >> radius;
 
-            sim.addParticle(Particle(x, y, vx, vy, radius));
+            sim.addParticle(Particle(x, y, theta, v, radius));
         }
 
         window.clear();
