@@ -52,9 +52,30 @@ public:
 };
 
 int main() {
-	sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!");
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Particle Simulator");
+    Simulation sim(800, 600);
 
-	
+    // Example: Add a particle
+    sim.addParticle(Particle(400, 300, -2, -2, 10));
 
-	return 0;
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        sim.simulate(0.01); // Advance the simulation
+
+        window.clear();
+        for (const auto& particle : sim.getParticles()) {
+            sf::CircleShape shape(particle.radius);
+            shape.setFillColor(sf::Color::Green);
+            shape.setPosition(static_cast<float>(particle.x - particle.radius), static_cast<float>(particle.y - particle.radius));
+            window.draw(shape);
+        }
+        window.display();
+    }
+
+    return 0;
 }
