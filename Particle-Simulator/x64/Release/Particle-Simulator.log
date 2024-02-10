@@ -1,0 +1,6 @@
+﻿  main.cpp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 28 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Particle-Simulator.vcxproj -> C:\Users\timot\Documents\STDISCM\STDISCM-PROBLEM-SET-1\Particle-Simulator\x64\Release\Particle-Simulator.exe
