@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <iostream>
 
 class Particle {
 public:
@@ -55,10 +56,6 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(800, 600), "Particle Simulator");
     Simulation sim(800, 600);
 
-    // Example: Add a particle
-    sim.addParticle(Particle(400, 300, -2, 2, 10));
-   //sim.addParticle(Particle(200, 100, 10, 10, 10));
-
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -67,6 +64,16 @@ int main() {
         }
 
         sim.simulate(0.01); // Advance the simulation
+
+        // Input handling outside the event loop
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+            double x, y, vx, vy, radius;
+
+            std::cout << "Enter x, y, vx, vy, radius for the new particle: ";
+            std::cin >> x >> y >> vx >> vy >> radius;
+
+            sim.addParticle(Particle(x, y, vx, vy, radius));
+        }
 
         window.clear();
         for (const auto& particle : sim.getParticles()) {
