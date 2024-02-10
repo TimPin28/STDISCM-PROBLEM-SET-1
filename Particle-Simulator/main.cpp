@@ -28,6 +28,29 @@ public:
 
 };
 
+class Simulation {
+    std::vector<Particle> particles;
+    double width, height; // Simulation area dimensions
+
+public:
+    Simulation(double width, double height) : width(width), height(height) {}
+
+    void addParticle(const Particle& particle) {
+        particles.push_back(particle);
+    }
+
+    const std::vector<Particle>& getParticles() const {
+        return particles;
+    }
+
+    void simulate(double deltaTime) {
+        for (auto& particle : particles) {
+            particle.updatePosition(deltaTime, width, height);
+            // Boundary checks and collision responses are now handled within updatePosition
+        }
+    }
+};
+
 int main() {
 	sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!");
 
