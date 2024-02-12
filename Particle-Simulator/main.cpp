@@ -108,8 +108,34 @@ int main() {
     addButton->setSize("18%", "6%");
     gui.add(addButton);
 
+    auto toggleCheckbox = tgui::CheckBox::create();
+    toggleCheckbox->setPosition("10%", "40%");
+    toggleCheckbox->setText("Toggle Edit Boxes");
+    gui.add(toggleCheckbox);
+
+    auto renderer = toggleCheckbox->getRenderer();
+    renderer->setTextColor(sf::Color::White);
+
     Simulation sim(1280, 720);
 
+    toggleCheckbox->onChange([&](bool checked) {
+        if (checked) {
+            // Hide the edit boxes
+            xPosEditBox->setVisible(false);
+            yPosEditBox->setVisible(false);
+            angleEditBox->setVisible(false);
+            velocityEditBox->setVisible(false);
+            addButton->setVisible(false);
+        }
+        else {
+            // Show the edit boxes
+            xPosEditBox->setVisible(true);
+            yPosEditBox->setVisible(true);
+            angleEditBox->setVisible(true);
+            velocityEditBox->setVisible(true);
+            addButton->setVisible(true);
+        }
+     });
     //sim.addParticle(Particle(640, 360, 45, 100, 10)); // Add a particle at the center of the window
 
     // Attach an event handler to the "Add Particle" button
