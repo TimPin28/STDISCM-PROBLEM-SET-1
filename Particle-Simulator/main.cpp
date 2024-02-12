@@ -1,5 +1,9 @@
 #include <SFML/Graphics.hpp>
 #include <TGUI/TGUI.hpp>
+#include <TGUI/Backend/SFML-Graphics.hpp>
+#include <TGUI/Widget.hpp>
+#include <TGUI/String.hpp>
+#include <iostream>
 #include <vector>
 
 #ifndef M_PI
@@ -63,6 +67,7 @@ public:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
+
     tgui::Gui gui(window); // Initialize TGUI Gui object for the window
 
     // Create and configure widgets for user input, e.g., for angle and velocity
@@ -85,19 +90,35 @@ int main() {
 
     Simulation sim(1280, 720);
 
-    addButton->connect("pressed", [&]() {
-        // Extract angle and velocity from edit boxes, convert to double
-        double angle = std::stod(angleEditBox->getText().toAnsiString());
-        double velocity = std::stod(velocityEditBox->getText().toAnsiString());
+    // Attach an event handler to the "Add Particle" button
+    addButton->onPress([&]() {
+        try {
+            // Convert tgui::String to std::string directly
+            std::string angleStr = angleEditBox->getText().toStdString();
+            std::string velocityStr = velocityEditBox->getText().toStdString();
 
-        // Convert angle to radians and calculate velocity components
-        double angleRad = angle * (M_PI / 180.0);
-        double vx = velocity * cos(angleRad);
-        double vy = -velocity * sin(angleRad); // Assuming SFML's coordinate system
+            // Then convert std::string to double
+            double angle = std::stod(angleStr);
+            double velocity = std::stod(velocityStr);
 
-        // Add particle at a fixed position for demonstration
-        sim.addParticle(Particle(640, 360, vx, vy, 10)); // Center of the window
+            // Convert angle to radians and calculate velocity components
+            double angleRad = angle * (M_PI / 180.0);
+            double vx = velocity * cos(angleRad);
+            double vy = -velocity * sin(angleRad); // Assuming SFML's coordinate system
+
+            // Add particle at a fixed position for demonstration
+            sim.addParticle(Particle(640, 360, vx, vy, 10)); // Center of the window
+        }
+        catch (const std::invalid_argument& e) {
+            // Handle the case where the conversion from string to double fails
+            std::cerr << "Invalid input for angle or velocity. Please enter numerical values.\n";
+        }
+        catch (const std::out_of_range& e) {
+            // Handle the case where the input numbers are too large
+            std::cerr << "Input for angle or velocity is out of range.\n";
+        }
         });
+
 
     while (window.isOpen()) {
         sf::Event event;
