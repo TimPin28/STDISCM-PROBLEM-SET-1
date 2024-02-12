@@ -70,21 +70,34 @@ int main() {
 
     tgui::Gui gui(window); // Initialize TGUI Gui object for the window
 
+    // Create and configure widgets for X and Y position input
+    auto xPosEditBox = tgui::EditBox::create();
+    xPosEditBox->setPosition("10%", "5%");
+    xPosEditBox->setSize("18%", "6%");
+    xPosEditBox->setDefaultText("X Position (0-1280)");
+    gui.add(xPosEditBox);
+
+    auto yPosEditBox = tgui::EditBox::create();
+    yPosEditBox->setPosition("10%", "12%");
+    yPosEditBox->setSize("18%", "6%");
+    yPosEditBox->setDefaultText("Y Position (0-720)");
+    gui.add(yPosEditBox);
+
     // Create and configure widgets for user input, e.g., for angle and velocity
     auto angleEditBox = tgui::EditBox::create();
-    angleEditBox->setPosition("10%", "5%");
+    angleEditBox->setPosition("10%", "19%");
     angleEditBox->setSize("18%", "6%");
     angleEditBox->setDefaultText("Angle (0-360)");
     gui.add(angleEditBox);
 
     auto velocityEditBox = tgui::EditBox::create();
-    velocityEditBox->setPosition("10%", "12%");
+    velocityEditBox->setPosition("10%", "26%");
     velocityEditBox->setSize("18%", "6%");
     velocityEditBox->setDefaultText("Velocity (pixels/sec)");
     gui.add(velocityEditBox);
 
     auto addButton = tgui::Button::create("Add Particle");
-    addButton->setPosition("10%", "19%");
+    addButton->setPosition("10%", "33%"); // Adjust the percentage as needed based on your layout
     addButton->setSize("18%", "6%");
     gui.add(addButton);
 
@@ -93,31 +106,31 @@ int main() {
     // Attach an event handler to the "Add Particle" button
     addButton->onPress([&]() {
         try {
-            // Convert tgui::String to std::string directly
             std::string angleStr = angleEditBox->getText().toStdString();
             std::string velocityStr = velocityEditBox->getText().toStdString();
+            std::string xPosStr = xPosEditBox->getText().toStdString();
+            std::string yPosStr = yPosEditBox->getText().toStdString();
 
-            // Then convert std::string to double
             double angle = std::stod(angleStr);
             double velocity = std::stod(velocityStr);
+            double xPosition = std::stod(xPosStr);
+            double yPosition = std::stod(yPosStr);
 
-            // Convert angle to radians and calculate velocity components
             double angleRad = angle * (M_PI / 180.0);
             double vx = velocity * cos(angleRad);
-            double vy = -velocity * sin(angleRad); // Assuming SFML's coordinate system
+            double vy = -velocity * sin(angleRad);
 
-            // Add particle at a fixed position for demonstration
-            sim.addParticle(Particle(640, 360, vx, vy, 10)); // Center of the window
+            // Add particle at the specified position
+            sim.addParticle(Particle(xPosition, yPosition, vx, vy, 10));
         }
         catch (const std::invalid_argument& e) {
-            // Handle the case where the conversion from string to double fails
-            std::cerr << "Invalid input for angle or velocity. Please enter numerical values.\n";
+            std::cerr << "Invalid input. Please enter numerical values.\n";
         }
         catch (const std::out_of_range& e) {
-            // Handle the case where the input numbers are too large
-            std::cerr << "Input for angle or velocity is out of range.\n";
+            std::cerr << "Input is out of range.\n";
         }
         });
+
 
 
     while (window.isOpen()) {
