@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <TGUI/TGUI.hpp>
 #include <vector>
 
 #ifndef M_PI
@@ -62,15 +63,47 @@ public:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
+    tgui::Gui gui(window); // Initialize TGUI Gui object for the window
+
+    // Create and configure widgets for user input, e.g., for angle and velocity
+    auto angleEditBox = tgui::EditBox::create();
+    angleEditBox->setPosition("10%", "5%");
+    angleEditBox->setSize("18%", "6%");
+    angleEditBox->setDefaultText("Angle (0-360)");
+    gui.add(angleEditBox);
+
+    auto velocityEditBox = tgui::EditBox::create();
+    velocityEditBox->setPosition("10%", "12%");
+    velocityEditBox->setSize("18%", "6%");
+    velocityEditBox->setDefaultText("Velocity (pixels/sec)");
+    gui.add(velocityEditBox);
+
+    auto addButton = tgui::Button::create("Add Particle");
+    addButton->setPosition("10%", "19%");
+    addButton->setSize("18%", "6%");
+    gui.add(addButton);
+
     Simulation sim(1280, 720);
 
-    // Example:
-    sim.addParticle(Particle(400, 300, 5, 10, 10)); // 5 degrees, 10 pixels/second velocity
+    addButton->connect("pressed", [&]() {
+        // Extract angle and velocity from edit boxes, convert to double
+        double angle = std::stod(angleEditBox->getText().toAnsiString());
+        double velocity = std::stod(velocityEditBox->getText().toAnsiString());
 
+        // Convert angle to radians and calculate velocity components
+        double angleRad = angle * (M_PI / 180.0);
+        double vx = velocity * cos(angleRad);
+        double vy = -velocity * sin(angleRad); // Assuming SFML's coordinate system
+
+        // Add particle at a fixed position for demonstration
+        sim.addParticle(Particle(640, 360, vx, vy, 10)); // Center of the window
+        });
 
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
+            gui.handleEvent(event); // Pass events to the GUI
+
             if (event.type == sf::Event::Closed)
                 window.close();
         }
@@ -84,6 +117,7 @@ int main() {
             shape.setPosition(static_cast<float>(particle.x - particle.radius), static_cast<float>(particle.y - particle.radius));
             window.draw(shape);
         }
+        gui.draw(); // Draw the GUI
         window.display();
     }
 
