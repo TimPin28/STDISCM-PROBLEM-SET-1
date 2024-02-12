@@ -119,44 +119,54 @@ int main() {
 
     tgui::Gui gui(window); // Initialize TGUI Gui object for the window
 
-    // Create and configure widgets for X and Y position, angle, and velocity input
-    auto xPosEditBox = tgui::EditBox::create();
-    xPosEditBox->setPosition("10%", "5%");
-    xPosEditBox->setSize("18%", "6%");
-    xPosEditBox->setDefaultText("X Position (0-1280)");
-    gui.add(xPosEditBox);
-
-    auto yPosEditBox = tgui::EditBox::create();
-    yPosEditBox->setPosition("10%", "12%");
-    yPosEditBox->setSize("18%", "6%");
-    yPosEditBox->setDefaultText("Y Position (0-720)");
-    gui.add(yPosEditBox);
-
-    auto angleEditBox = tgui::EditBox::create();
-    angleEditBox->setPosition("10%", "19%");
-    angleEditBox->setSize("18%", "6%");
-    angleEditBox->setDefaultText("Angle (0-360)");
-    gui.add(angleEditBox);
-
-    auto velocityEditBox = tgui::EditBox::create();
-    velocityEditBox->setPosition("10%", "26%");
-    velocityEditBox->setSize("18%", "6%");
-    velocityEditBox->setDefaultText("Velocity (pixels/sec)");
-    gui.add(velocityEditBox);
-
-    auto addButton = tgui::Button::create("Add Particle");
-    addButton->setPosition("10%", "33%"); // Adjust the percentage as needed based on your layout
-    addButton->setSize("18%", "6%");
-    gui.add(addButton);
-
+    // Check box to toggle visibility of input fields
     auto toggleCheckbox = tgui::CheckBox::create();
-    toggleCheckbox->setPosition("10%", "40%");
+    toggleCheckbox->setPosition("10%", "1%");
     toggleCheckbox->setText("Toggle Edit Boxes");
     gui.add(toggleCheckbox);
 
     auto renderer = toggleCheckbox->getRenderer();
     renderer->setTextColor(sf::Color::White);
 
+    // Widgets for input fields
+
+    // Particle Input Form 1
+    auto noParticles1 = tgui::EditBox::create();
+    noParticles1->setPosition("10%", "5%");
+    noParticles1->setSize("18%", "6%");
+    noParticles1->setDefaultText("Number of Particles");
+    gui.add(noParticles1);
+
+    auto X1PosEditBox = tgui::EditBox::create();
+    X1PosEditBox->setPosition("10%", "12%");
+    X1PosEditBox->setSize("18%", "6%");
+    X1PosEditBox->setDefaultText("X1 Coordinate");
+    gui.add(X1PosEditBox);
+
+    auto Y1PosEditBox = tgui::EditBox::create();
+    Y1PosEditBox->setPosition("10%", "19%");
+    Y1PosEditBox->setSize("18%", "6%");
+    Y1PosEditBox->setDefaultText("Y1 Coordinate");
+    gui.add(Y1PosEditBox);
+
+    auto X2PosEditBox = tgui::EditBox::create();
+    X2PosEditBox->setPosition("10%", "26%");
+    X2PosEditBox->setSize("18%", "6%");
+    X2PosEditBox->setDefaultText("X2 Coordinate");
+    gui.add(X2PosEditBox);
+
+    auto Y2PosEditBox = tgui::EditBox::create();
+    Y2PosEditBox->setPosition("10%", "33%");
+    Y2PosEditBox->setSize("18%", "6%");
+    Y2PosEditBox->setDefaultText("Y2 Coordinate");
+    gui.add(Y2PosEditBox);
+
+    auto addButton1 = tgui::Button::create("Add Particle");
+    addButton1->setPosition("10%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton1->setSize("18%", "6%");
+    gui.add(addButton1);
+
+    // Wall Input Form 
     auto wallX1EditBox = tgui::EditBox::create();
     wallX1EditBox->setPosition("75%", "5%");
     wallX1EditBox->setSize("18%", "6%");
@@ -186,53 +196,61 @@ int main() {
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
 
-
     Simulation sim(1280, 720);
 
+    //Checkbox event handler
     toggleCheckbox->onChange([&](bool checked) {
         if (checked) {
-            // Hide the edit boxes
-            xPosEditBox->setVisible(false);
-            yPosEditBox->setVisible(false);
-            angleEditBox->setVisible(false);
-            velocityEditBox->setVisible(false);
-            addButton->setVisible(false);
+            // Hide the input fields
+            noParticles1->setVisible(false);
+            X1PosEditBox->setVisible(false);
+            Y1PosEditBox->setVisible(false);
+            X2PosEditBox->setVisible(false);
+            Y2PosEditBox->setVisible(false);
+
+            wallX1EditBox->setVisible(false);
+            wallY1EditBox->setVisible(false);
+            wallX2EditBox->setVisible(false);
+            wallY2EditBox->setVisible(false);
+            addWallButton->setVisible(false);
         }
         else {
-            // Show the edit boxes
-            xPosEditBox->setVisible(true);
-            yPosEditBox->setVisible(true);
-            angleEditBox->setVisible(true);
-            velocityEditBox->setVisible(true);
-            addButton->setVisible(true);
+            // Show the input boxes
+            noParticles1->setVisible(true);
+            X1PosEditBox->setVisible(true);
+            Y1PosEditBox->setVisible(true);
+            X2PosEditBox->setVisible(true);
+            Y2PosEditBox->setVisible(true);
+
+            wallX1EditBox->setVisible(true);
+            wallY1EditBox->setVisible(true);
+            wallX2EditBox->setVisible(true);
+            wallY2EditBox->setVisible(true);
+            addWallButton->setVisible(true);
         }
      });
     //sim.addParticle(Particle(640, 360, 45, 100, 10)); // Add a particle at the center of the window
 
-    // Attach an event handler to the "Add Particle" button
-    addButton->onPress([&]() {
+    // Attach an event handler to the "Add Particle" button for Form 1
+    addButton1->onPress([&]() {
         try {
-            std::string angleStr = angleEditBox->getText().toStdString();
-            std::string velocityStr = velocityEditBox->getText().toStdString();
-            std::string xPosStr = xPosEditBox->getText().toStdString();
-            std::string yPosStr = yPosEditBox->getText().toStdString();
+            std::string noParticlesStr = noParticles1->getText().toStdString(); 
+            std::string x1Str = X1PosEditBox->getText().toStdString();
+            std::string y1Str = Y1PosEditBox->getText().toStdString();
+            std::string x2Str = X2PosEditBox->getText().toStdString();
+            std::string y2Str = Y2PosEditBox->getText().toStdString();
 
-            // print velocityStr and angleStr
-            std::cout << "Velocity: " << velocityStr << std::endl;
+            int noParticles = std::stoi(noParticlesStr);
+            float x1 = std::stoi(x1Str);
+            float y1 = std::stoi(y1Str);
+            float x2 = std::stoi(x2Str);
+            float y2 = std::stoi(y2Str);
 
-            double angle = std::stod(angleStr);
-            double velocity = std::stod(velocityStr);
-            double xPosition = std::stod(xPosStr);
-            double yPosition = std::stod(yPosStr);
+            float velocity = 5;
+            float angle = 45;
 
             // Add particle at the specified position
             sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
-
-            // Reset the input values
-            angleEditBox->setText("");
-            velocityEditBox->setText("");
-            xPosEditBox->setText("");
-            yPosEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input. Please enter numerical values.\n";
@@ -242,6 +260,7 @@ int main() {
         }
         });
 
+    // Attach an event handler to the "Add Wall" button
     addWallButton->onPress([&]() {
         try {
             float x1 = std::stof(wallX1EditBox->getText().toStdString());
@@ -261,8 +280,6 @@ int main() {
             std::cerr << "Error adding wall: " << e.what() << std::endl;
         }
         });
-
-
 
     while (window.isOpen()) {
         sf::Event event;
