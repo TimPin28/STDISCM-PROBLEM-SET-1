@@ -1,17 +1,27 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 class Particle {
 public:
     double x, y; // Position
-    double vx, vy; // Velocity
+    double vx, vy; // Velocity components calculated from angle and velocity
     double radius;
 
-    Particle(double x, double y, double vx, double vy, double radius)
-        : x(x), y(y), vx(vx), vy(-vy), radius(radius) {}
+    // Constructor now takes angle (in degrees) and velocity, along with position and radius
+    Particle(double x, double y, double angle, double velocity, double radius)
+        : x(x), y(y), radius(radius) {
+        // Convert angle to radians for trigonometry functions
+        double angleRad = angle * (M_PI / 180.0);
+        // Calculate velocity components based on angle and velocity
+        vx = velocity * cos(angleRad);
+        vy = -velocity * sin(angleRad); // Negative since SFML's y-axis increases downwards
+    }
 
     void updatePosition(double deltaTime, double simWidth, double simHeight) {
-        // Update position based on velocity
         x += vx * deltaTime;
         y += vy * deltaTime;
 
@@ -25,7 +35,6 @@ public:
             y = (y - radius < 0) ? radius : simHeight - radius; // Correct position to stay within bounds
         }
     }
-
 };
 
 class Simulation {
@@ -52,12 +61,12 @@ public:
 };
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Particle Simulator");
-    Simulation sim(800, 600);
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
+    Simulation sim(1280, 720);
 
-    // Example: Add a particle
-    sim.addParticle(Particle(400, 300, -2, 2, 10));
-   //sim.addParticle(Particle(200, 100, 10, 10, 10));
+    // Example:
+    sim.addParticle(Particle(400, 300, 5, 10, 10)); // 5 degrees, 10 pixels/second velocity
+
 
     while (window.isOpen()) {
         sf::Event event;
