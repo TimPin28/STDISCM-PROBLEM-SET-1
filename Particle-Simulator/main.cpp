@@ -4,6 +4,9 @@
 #include <TGUI/Widget.hpp>
 #include <TGUI/String.hpp>
 #include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <algorithm>
 #include <vector>
 
 #ifndef M_PI
@@ -56,6 +59,35 @@ public:
     Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
 };
 
+bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
+    // Convert line segments to a general form Ax + By = C
+    float A1 = nextPos.y - static_cast<float>(particle.y);
+    float B1 = static_cast<float>(particle.x) - nextPos.x;
+    float C1 = A1 * static_cast<float>(particle.x) + B1 * static_cast<float>(particle.y);
+
+    float A2 = wall.end.y - wall.start.y;
+    float B2 = wall.start.x - wall.end.x;
+    float C2 = A2 * wall.start.x + B2 * wall.start.y;
+
+    // Calculate the intersection point
+    float det = A1 * B2 - A2 * B1;
+    if (fabs(det) < 1e-9) { // Lines are parallel
+        return false;
+    }
+    else {
+        float x = (B2 * C1 - B1 * C2) / det;
+        float y = (A1 * C2 - A2 * C1) / det;
+
+        // Check if the intersection point is within both line segments
+        bool onParticlePath = std::min(static_cast<float>(particle.x), nextPos.x) <= x && x <= std::max(static_cast<float>(particle.x), nextPos.x) &&
+            std::min(static_cast<float>(particle.y), nextPos.y) <= y && y <= std::max(static_cast<float>(particle.y), nextPos.y);
+        bool onWall = std::min(wall.start.x, wall.end.x) <= x && x <= std::max(wall.start.x, wall.end.x) &&
+            std::min(wall.start.y, wall.end.y) <= y && y <= std::max(wall.start.y, wall.end.y);
+
+        return onParticlePath && onWall;
+    }
+}
+
 
 class Simulation {
     std::vector<Particle> particles;
@@ -75,9 +107,8 @@ public:
 
     void checkCollisionWithWalls(Particle& particle) {
         for (auto& wall : walls) {
-            // Example for a horizontal or vertical wall. Extend logic for any wall orientation.
             sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
-            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall
+            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall, assuming wall.end and wall.start are sf::Vector2f
 
             // Normalize N
             float length = std::sqrt(N.x * N.x + N.y * N.y);
@@ -85,17 +116,28 @@ public:
             N.y /= length;
 
             // Predict next position of the particle
-            sf::Vector2f nextPos = sf::Vector2f(static_cast<float>(particle.x + particle.vx), static_cast<float>(particle.y + particle.vy));
+            sf::Vector2f nextPos(particle.x + particle.vx, particle.y + particle.vy);
 
-            // Simple collision detection (extend this to accurately detect collision)
-            // Assume collision occurs
+            // Implement actual collision detection here
+            // If a collision is detected:
+            if (collisionDetected(particle, nextPos, wall)) {
+                // Step 1: Calculate the original speed
+                float originalSpeed = std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
 
-            // Reflect velocity
-            float dotProduct = particle.vx * N.x + particle.vy * N.y;
-            particle.vx -= 2 * dotProduct * N.x;
-            particle.vy -= 2 * dotProduct * N.y;
+                // Step 2: Reflect velocity
+                float dotProduct = particle.vx * N.x + particle.vy * N.y;
+                particle.vx -= 2 * dotProduct * N.x;
+                particle.vy -= 2 * dotProduct * N.y;
+
+                // Step 3: Normalize the reflected velocity vector
+                float reflectedSpeed = std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+                particle.vx = (particle.vx / reflectedSpeed) * originalSpeed;
+                particle.vy = (particle.vy / reflectedSpeed) * originalSpeed;
+            }
+
         }
     }
+
 
     const std::vector<Particle>& getParticles() const {
         return particles;
