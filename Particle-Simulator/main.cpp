@@ -101,6 +101,10 @@ public:
         return particles;
     }
 
+    const std::vector<Wall>& getWalls() const {
+        return walls;
+    }
+
     void simulate(double deltaTime) {
         for (auto& particle : particles) {
             particle.updatePosition(deltaTime, width, height);
@@ -278,6 +282,16 @@ int main() {
             shape.setPosition(static_cast<float>(particle.x - particle.radius), static_cast<float>(particle.y - particle.radius));
             window.draw(shape);
         }
+        // Draw walls
+        for (const auto& wall : sim.getWalls()) {
+            sf::VertexArray line(sf::Lines, 2);
+            line[0].position = sf::Vector2f(wall.start.x, wall.start.y);
+            line[0].color = sf::Color::White;
+            line[1].position = sf::Vector2f(wall.end.x, wall.end.y);
+            line[1].color = sf::Color::White;
+            window.draw(line);
+        }
+
         gui.draw(); // Draw the GUI
         window.display();
     }
