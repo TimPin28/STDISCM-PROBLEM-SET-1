@@ -17,11 +17,18 @@ public:
     double radius;
 
     // Constructor now takes angle (in degrees) and velocity, along with position and radius
+
     Particle(double x, double y, double angle, double velocity, double radius)
         : x(x), y(y), radius(radius) {
-        // Convert angle to radians for trigonometry functions
-        double angleRad = angle * (M_PI / 180.0);
+
         // Calculate velocity components based on angle and velocity
+        // print cos(angle) and sin(angle)
+        std::cout << "cos(angle): " << cos(angle) << std::endl;
+        std::cout << "sin(angle): " << sin(angle) << std::endl;
+        std::cout << "Velocity: " << velocity << std::endl;
+
+        double angleRad = angle * (M_PI / 180.0);
+
         vx = velocity * cos(angleRad);
         vy = -velocity * sin(angleRad); // Negative since SFML's y-axis increases downwards
     }
@@ -103,6 +110,8 @@ int main() {
 
     Simulation sim(1280, 720);
 
+    //sim.addParticle(Particle(640, 360, 45, 100, 10)); // Add a particle at the center of the window
+
     // Attach an event handler to the "Add Particle" button
     addButton->onPress([&]() {
         try {
@@ -111,17 +120,22 @@ int main() {
             std::string xPosStr = xPosEditBox->getText().toStdString();
             std::string yPosStr = yPosEditBox->getText().toStdString();
 
+            // print velocityStr and angleStr
+            std::cout << "Velocity: " << velocityStr << std::endl;
+
             double angle = std::stod(angleStr);
             double velocity = std::stod(velocityStr);
             double xPosition = std::stod(xPosStr);
             double yPosition = std::stod(yPosStr);
 
-            double angleRad = angle * (M_PI / 180.0);
-            double vx = velocity * cos(angleRad);
-            double vy = -velocity * sin(angleRad);
-
             // Add particle at the specified position
-            sim.addParticle(Particle(xPosition, yPosition, vx, vy, 10));
+            sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
+
+            // Reset the input values
+            angleEditBox->setText("");
+            velocityEditBox->setText("");
+            xPosEditBox->setText("");
+            yPosEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input. Please enter numerical values.\n";
