@@ -138,7 +138,6 @@ public:
         }
     }
 
-
     const std::vector<Particle>& getParticles() const {
         return particles;
     }
@@ -208,6 +207,54 @@ int main() {
     addButton1->setSize("18%", "6%");
     gui.add(addButton1);
 
+    // Particle Input Form 2
+    auto noParticles2 = tgui::EditBox::create();
+    noParticles2->setPosition("30%", "5%");
+    noParticles2->setSize("18%", "6%");
+    noParticles2->setDefaultText("Number of Particles");
+    gui.add(noParticles2);
+
+    auto startAngleEditBox = tgui::EditBox::create();
+    startAngleEditBox->setPosition("30%", "12%");
+    startAngleEditBox->setSize("18%", "6%");
+    startAngleEditBox->setDefaultText("Start Angle");
+    gui.add(startAngleEditBox);
+
+    auto endAngleEditBox = tgui::EditBox::create();
+    endAngleEditBox->setPosition("30%", "19%");
+    endAngleEditBox->setSize("18%", "6%");
+    endAngleEditBox->setDefaultText("End Angle");
+    gui.add(endAngleEditBox);
+
+    auto addButton2 = tgui::Button::create("Add Particle");
+    addButton2->setPosition("30%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton2->setSize("18%", "6%");
+    gui.add(addButton2);
+
+    // Particle Input Form 3
+    auto noParticles3 = tgui::EditBox::create();
+    noParticles3->setPosition("50%", "5%");
+    noParticles3->setSize("18%", "6%");
+    noParticles3->setDefaultText("Number of Particles");
+    gui.add(noParticles3);
+
+    auto startVelocityEditBox = tgui::EditBox::create();
+    startVelocityEditBox->setPosition("50%", "12%");
+    startVelocityEditBox->setSize("18%", "6%");
+    startVelocityEditBox->setDefaultText("Start Velocity");
+    gui.add(startVelocityEditBox);
+
+    auto endVelocityEditBox = tgui::EditBox::create();
+    endVelocityEditBox->setPosition("50%", "19%");
+    endVelocityEditBox->setSize("18%", "6%");
+    endVelocityEditBox->setDefaultText("End Velocity");
+    gui.add(endVelocityEditBox);
+
+    auto addButton3 = tgui::Button::create("Add Particle");
+    addButton3->setPosition("50%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton3->setSize("18%", "6%");
+    gui.add(addButton3);
+
     // Wall Input Form 
     auto wallX1EditBox = tgui::EditBox::create();
     wallX1EditBox->setPosition("75%", "5%");
@@ -249,6 +296,17 @@ int main() {
             Y1PosEditBox->setVisible(false);
             X2PosEditBox->setVisible(false);
             Y2PosEditBox->setVisible(false);
+            addButton1->setVisible(false);
+
+            noParticles2->setVisible(false);
+            startAngleEditBox->setVisible(false);
+            endAngleEditBox->setVisible(false);
+            addButton2->setVisible(false);
+
+            noParticles3->setVisible(false);
+            startVelocityEditBox->setVisible(false);
+            endVelocityEditBox->setVisible(false);
+            addButton3->setVisible(false);
 
             wallX1EditBox->setVisible(false);
             wallY1EditBox->setVisible(false);
@@ -263,6 +321,17 @@ int main() {
             Y1PosEditBox->setVisible(true);
             X2PosEditBox->setVisible(true);
             Y2PosEditBox->setVisible(true);
+            addButton1->setVisible(true);
+
+            noParticles2->setVisible(true);
+            startAngleEditBox->setVisible(true);
+            endAngleEditBox->setVisible(true);
+            addButton2->setVisible(true);
+
+            noParticles3->setVisible(true);
+            startVelocityEditBox->setVisible(true);
+            endVelocityEditBox->setVisible(true);
+            addButton3->setVisible(true);
 
             wallX1EditBox->setVisible(true);
             wallY1EditBox->setVisible(true);
@@ -292,7 +361,59 @@ int main() {
             float angle = 45;
 
             // Add particle at the specified position
-            sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
+            //sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
+        }
+        catch (const std::invalid_argument& e) {
+            std::cerr << "Invalid input. Please enter numerical values.\n";
+        }
+        catch (const std::out_of_range& e) {
+            std::cerr << "Input is out of range.\n";
+        }
+        });
+
+    // Attach an event handler to the "Add Particle" button for Form 2
+    addButton2->onPress([&]() {
+        try {
+            std::string noParticlesStr = noParticles2->getText().toStdString();
+            std::string startAngleStr = startAngleEditBox->getText().toStdString(); 
+            std::string endAngleStr = endAngleEditBox->getText().toStdString();
+
+            int noParticles = std::stoi(noParticlesStr);
+            float startAngle = std::stoi(startAngleStr);
+            float endAngle = std::stoi(endAngleStr);
+
+            float xPosition = 400;
+            float yPosition = 400;
+            float velocity = 5;
+            
+            // Add particle at the specified position
+            //sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
+        }
+        catch (const std::invalid_argument& e) {
+            std::cerr << "Invalid input. Please enter numerical values.\n";
+        }
+        catch (const std::out_of_range& e) {
+            std::cerr << "Input is out of range.\n";
+        }
+        });
+
+    // Attach an event handler to the "Add Particle" button for Form 3
+    addButton3->onPress([&]() {
+        try {
+            std::string noParticlesStr = noParticles3->getText().toStdString();
+            std::string startVelocityStr = startVelocityEditBox->getText().toStdString();
+            std::string endVelocityStr = endVelocityEditBox->getText().toStdString();
+
+            int noParticles = std::stoi(noParticlesStr);
+            float startVelocity = std::stoi(startVelocityStr);
+            float endVelocity = std::stoi(endVelocityStr);
+
+            float xPosition = 400;
+            float yPosition = 400;
+            float angle = 225;
+
+            // Add particle at the specified position
+            //sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input. Please enter numerical values.\n";
