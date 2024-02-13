@@ -227,17 +227,23 @@ public:
 
         // Update position of each particle in parallel
         for (auto& particle : particles) {
-            auto future = pool.enqueue([&particle, deltaTime, this]() {
+
+            // Single Threaded Version
+            particle.updatePosition(deltaTime, width, height);
+            checkCollisionWithWalls(particle);
+
+            // Multi-threaded Version
+            /*auto future = pool.enqueue([&particle, deltaTime, this]() {
                 particle.updatePosition(deltaTime, this->width, this->height);
                 this->checkCollisionWithWalls(particle);
                 });
-            futures.push_back(std::move(future));
+            futures.push_back(std::move(future));*/
         }
 
         // Wait for all tasks to complete
-        for (auto& future : futures) {
-            future.get();
-        }
+        //for (auto& future : futures) {
+        //    future.get();
+        //}
     }
 };
 
