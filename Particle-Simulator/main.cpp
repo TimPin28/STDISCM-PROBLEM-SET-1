@@ -363,31 +363,37 @@ int main() {
     // Attach an event handler to the "Add Particle" button for Form 1
     addButton1->onPress([&]() {
         try {
-            std::string noParticlesStr = noParticles1->getText().toStdString(); 
-            std::string x1Str = X1PosEditBox->getText().toStdString();
-            std::string y1Str = Y1PosEditBox->getText().toStdString();
-            std::string x2Str = X2PosEditBox->getText().toStdString();
-            std::string y2Str = Y2PosEditBox->getText().toStdString();
+            int n = std::stoi(noParticles1->getText().toStdString()); // Number of particles
+            float x1 = std::stof(X1PosEditBox->getText().toStdString()); // Start X coordinate
+            float y1 = std::stof(Y1PosEditBox->getText().toStdString()); // Start Y coordinate
+            float x2 = std::stof(X2PosEditBox->getText().toStdString()); // End X coordinate
+            float y2 = std::stof(Y2PosEditBox->getText().toStdString()); // End Y coordinate
 
-            int noParticles = std::stoi(noParticlesStr);
-            float x1 = std::stoi(x1Str);
-            float y1 = std::stoi(y1Str);
-            float x2 = std::stoi(x2Str);
-            float y2 = std::stoi(y2Str);
+            float velocity = 100.0f; // Assuming a constant velocity value
+            float angle = 0.0f; // Assuming a constant angle in degrees
 
-            float velocity = 5;
-            float angle = 45;
+            if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            float xStep = (x2 - x1) / std::max(1, n - 1); // Calculate the x step between particles
+            float yStep = (y2 - y1) / std::max(1, n - 1); // Calculate the y step between particles
 
-            // Add particle at the specified position
-            //sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
+            for (int i = 0; i < n; ++i) {
+                float xPos = x1 + i * xStep; // Calculate the x position for each particle
+                float yPos = y1 + i * yStep; // Calculate the y position for each particle
+
+                // Add each particle to the simulation
+                sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
+            }
         }
         catch (const std::invalid_argument& e) {
-            std::cerr << "Invalid input. Please enter numerical values.\n";
+            std::cerr << "Invalid input: " << e.what() << '\n';
+            // Optionally, display an error message in the GUI
         }
         catch (const std::out_of_range& e) {
-            std::cerr << "Input is out of range.\n";
+            std::cerr << "Input out of range: " << e.what() << '\n';
+            // Optionally, display an error message in the GUI
         }
         });
+
 
     // Attach an event handler to the "Add Particle" button for Form 2
     addButton2->onPress([&]() {
