@@ -148,18 +148,18 @@ public:
 
         for (auto& particle : particles) {
 
-            //std::thread updateThread([&]() {
-            //    particle.updatePosition(deltaTime, width, height);
-            //});
+            /*std::thread updateThread([&]() {
+                particle.updatePosition(deltaTime, width, height);
+            });*/
 
             // Thread for checking collisions
-            //std::thread collisionThread([&]() {
-            //    checkCollisionWithWalls(particle);
-            //});
+            /*std::thread collisionThread([&]() {
+                checkCollisionWithWalls(particle);
+            });*/
 
             // Wait for both threads to complete their tasks
-            //updateThread.join();
-            //collisionThread.join();
+            /*updateThread.join();
+            collisionThread.join();*/
 
             particle.updatePosition(deltaTime, width, height);
             checkCollisionWithWalls(particle);
@@ -424,8 +424,8 @@ int main() {
             float x2 = std::stof(X2PosEditBox->getText().toStdString()); // End X coordinate
             float y2 = std::stof(Y2PosEditBox->getText().toStdString()); // End Y coordinate
 
-            float velocity = 100.0f; // Assuming a constant velocity value
-            float angle = 45.0f; // Assuming a constant angle in degrees
+            float velocity = 20.0f; // constant velocity value
+            float angle = 45.0f; // constant angle in degrees
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
             float xStep = (x2 - x1) / std::max(1, n - 1); // Calculate the x step between particles
@@ -441,14 +441,11 @@ int main() {
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
-            // Optionally, display an error message in the GUI
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            // Optionally, display an error message in the GUI
         }
         });
-
 
     // Attach an event handler to the "Add Particle" button for Form 2
     addButton2->onPress([&]() {
@@ -457,22 +454,16 @@ int main() {
             float startTheta = std::stof(startAngleEditBox->getText().toStdString()); // Start angle in degrees
             float endTheta = std::stof(endAngleEditBox->getText().toStdString()); // End angle in degrees
 
-            // Assuming constant velocity and a starting point for all particles
-            float velocity = 100.0f; // Example velocity
-            sf::Vector2f startPoint(640, 360); // Example start point, adjust as needed
+            // constant velocity and a starting point for all particles
+            float velocity = 20.0f; // velocity
+            sf::Vector2f startPoint(640, 360); // start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
-
-            // print starTheta and endTheta
-            std::cout << "Start Theta: " << startTheta << std::endl;
-            std::cout << "End Theta: " << endTheta << std::endl;
 
             float angularStep = (n > 1) ? (endTheta - startTheta) / (n - 1) : 0;
 
             if (startTheta == 0.0f && endTheta == 360.0f) {
                 angularStep = (n > 1) ? (endTheta - startTheta) / (n) : 0;
-                // print angularStep
-                std::cout << "Angular Step: " << angularStep << std::endl;
             }
 
             for (int i = 0; i < n; ++i) {
@@ -492,15 +483,14 @@ int main() {
         }
         });
 
-
     // Attach an event handler to the "Add Particle" button for Form 3
     addButton3->onPress([&]() {
         try {
             int n = std::stoi(noParticles3->getText().toStdString()); // Number of particles
             float startVelocity = std::stof(startVelocityEditBox->getText().toStdString()); // Start velocity
             float endVelocity = std::stof(endVelocityEditBox->getText().toStdString()); // End velocity
-            float angle = 90.0f; // Assuming a constant angle in degrees
-            sf::Vector2f startPoint(400, 300); // Assuming a constant start point
+            float angle = 90.0f; // constant angle in degrees
+            sf::Vector2f startPoint(400, 300); // constant start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
             float velocityStep = (endVelocity - startVelocity) / std::max(1, n - 1); // Calculate the velocity step between particles
@@ -515,11 +505,9 @@ int main() {
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
-            // Optionally, display an error message in the GUI
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            // Optionally, display an error message in the GUI
         }
         });
 
@@ -594,7 +582,7 @@ int main() {
                 window.close();
         }
 
-        sim.simulate(0.01); // Advance the simulation
+        sim.simulate(1); // Advance the simulation
 
         frames++; // Increment frame count for this second
 
