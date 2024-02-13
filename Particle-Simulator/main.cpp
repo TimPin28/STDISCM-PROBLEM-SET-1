@@ -10,6 +10,11 @@
 #include <sstream>
 #include <vector>
 #include <thread>
+#include <future>
+#include <queue>
+#include <functional>
+#include <mutex>
+#include <condition_variable>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -69,7 +74,6 @@ float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
     return a.x * b.x + a.y * b.y;
 }
 
-
 bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
     // This replaces the existing collision detection between the "if (fabs(det) < 1e-9)" block
     sf::Vector2f wallVector = wall.end - wall.start;
@@ -86,13 +90,91 @@ bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, co
     return distance <= particle.radius;
 }
 
+class ThreadPool {
+public:
+    ThreadPool(size_t threads);
+    template<class F, class... Args>
+    auto enqueue(F&& f, Args&&... args)
+        -> std::future<typename std::result_of<F(Args...)>::type>;
+    ~ThreadPool();
+
+private:
+    std::vector<std::thread> workers;
+    std::queue<std::function<void()>> tasks;
+
+    std::mutex queue_mutex;
+    std::condition_variable condition;
+    bool stop;
+};
+
+// Constructor
+ThreadPool::ThreadPool(size_t threads) : stop(false) {
+    for (size_t i = 0; i < threads; ++i)
+        workers.emplace_back(
+            [this] {
+                for (;;) {
+                    std::function<void()> task;
+                    {
+                        std::unique_lock<std::mutex> lock(this->queue_mutex);
+                        this->condition.wait(lock,
+                            [this] { return this->stop || !this->tasks.empty(); });
+                        if (this->stop && this->tasks.empty())
+                            return;
+                        task = std::move(this->tasks.front());
+                        this->tasks.pop();
+                    }
+                    task();
+                }
+            }
+    );
+}
+
+// Add new work item to the pool
+template<class F, class... Args>
+auto ThreadPool::enqueue(F&& f, Args&&... args)
+-> std::future<typename std::result_of<F(Args...)>::type> {
+    using return_type = typename std::result_of<F(Args...)>::type;
+
+    auto task = std::make_shared< std::packaged_task<return_type()> >(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+    );
+
+    std::future<return_type> res = task->get_future();
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+
+        // don't allow enqueueing after stopping the pool
+        if (stop)
+            throw std::runtime_error("enqueue on stopped ThreadPool");
+
+        tasks.emplace([task]() { (*task)(); });
+    }
+    condition.notify_one();
+    return res;
+}
+
+// Destructor joins all threads
+ThreadPool::~ThreadPool() {
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        stop = true;
+    }
+    condition.notify_all();
+    for (std::thread& worker : workers)
+        worker.join();
+}
+
+
 class Simulation {
     std::vector<Particle> particles;
     std::vector<Wall> walls;
     double width, height; // Simulation area dimensions
 
+    ThreadPool pool;
+
 public:
-    Simulation(double width, double height) : width(width), height(height) {}
+    Simulation(double width, double height, size_t threadCount)
+        : width(width), height(height), pool(threadCount) {}
 
     void addParticle(const Particle& particle) {
         particles.push_back(particle);
@@ -144,32 +226,53 @@ public:
     }
 
     void simulate(double deltaTime) {
-        //Assign each particle to a thread
+        std::vector<std::future<void>> futures;
 
+        // Update position of each particle in parallel
         for (auto& particle : particles) {
+            auto future = pool.enqueue([&particle, deltaTime, this]() {
+                particle.updatePosition(deltaTime, this->width, this->height);
+                this->checkCollisionWithWalls(particle);
+                });
+            futures.push_back(std::move(future));
+        }
 
-            /*std::thread updateThread([&]() {
-                particle.updatePosition(deltaTime, width, height);
-            });*/
-
-            // Thread for checking collisions
-            /*std::thread collisionThread([&]() {
-                checkCollisionWithWalls(particle);
-            });*/
-
-            // Wait for both threads to complete their tasks
-            /*updateThread.join();
-            collisionThread.join();*/
-
-            particle.updatePosition(deltaTime, width, height);
-            checkCollisionWithWalls(particle);
-            // Boundary checks and collision responses are now handled within updatePosition
+        // Wait for all tasks to complete
+        for (auto& future : futures) {
+            future.get();
         }
     }
+
+
+    //void simulate(double deltaTime) {
+    //    //Assign each particle to a thread
+
+    //    for (auto& particle : particles) {
+
+    //        /*std::thread updateThread([&]() {
+    //            particle.updatePosition(deltaTime, width, height);
+    //        });*/
+
+    //        // Thread for checking collisions
+    //        /*std::thread collisionThread([&]() {
+    //            checkCollisionWithWalls(particle);
+    //        });*/
+
+    //        // Wait for both threads to complete their tasks
+    //        /*updateThread.join();
+    //        collisionThread.join();*/
+
+    //        particle.updatePosition(deltaTime, width, height);
+    //        checkCollisionWithWalls(particle);
+    //        // Boundary checks and collision responses are now handled within updatePosition
+    //    }
+    //}
 };
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
+
+    ThreadPool pool(std::thread::hardware_concurrency()); // Use the number of concurrent threads supported by the hardware
 
     // Set the frame rate limit
     window.setFramerateLimit(60);
@@ -346,7 +449,9 @@ int main() {
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
 
-    Simulation sim(1280, 720);
+    size_t threadCount = std::thread::hardware_concurrency(); // Use the number of concurrent threads supported by the hardware
+
+    Simulation sim(1280, 720, threadCount);
 
     //Checkbox event handler
     toggleCheckbox->onChange([&](bool checked) {
