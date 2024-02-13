@@ -227,7 +227,7 @@ public:
 
     void simulate(double deltaTime) {
         std::vector<std::future<void>> futures;
-
+        /*
         // Iterate over each particle and assign the update task to the pool
         for (auto& particle : particles) {
             pool.enqueue([&particle, deltaTime, this]() {
@@ -237,15 +237,15 @@ public:
                 this->checkCollisionWithWalls(particle);
                 });
         }
-
+        */
         // Update position of each particle in parallel
-        //for (auto& particle : particles) {
-        //    auto future = pool.enqueue([&particle, deltaTime, this]() {
-        //        particle.updatePosition(deltaTime, this->width, this->height);
-        //        this->checkCollisionWithWalls(particle);
-        //        });
-        //    futures.push_back(std::move(future));
-        //}
+        for (auto& particle : particles) {
+            auto future = pool.enqueue([&particle, deltaTime, this]() {
+                particle.updatePosition(deltaTime, this->width, this->height);
+                this->checkCollisionWithWalls(particle);
+                });
+            //futures.push_back(std::move(future));
+        }
 
         // Wait for all tasks to complete
         for (auto& future : futures) {
@@ -287,10 +287,7 @@ int main() {
     // Set the frame rate limit
     window.setFramerateLimit(60);
     
-    sf::Clock clock; // Starts the clock for FPS calculation
-    sf::Clock displayClock; // Separate clock for controlling display update rate
-    unsigned int frames = 0;
-    unsigned int fps = 0;
+    sf::Clock clock; // Starts the clock for FPS calculation  
 
     sf::Font font;
     if (!font.loadFromFile("OpenSans-Regular.ttf")) {
@@ -689,6 +686,15 @@ int main() {
 
 
     while (window.isOpen()) {
+        //compute framerate
+        float currentTime = clock.restart().asSeconds();
+        float fps = 1.0f/ (currentTime);
+        std::stringstream ss;
+        ss.precision(0); // Set precision to zero
+        ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
+
+        fpsText.setString(ss.str());
+
         sf::Event event;
         while (window.pollEvent(event)) {
             gui.handleEvent(event); // Pass events to the GUI
@@ -698,21 +704,7 @@ int main() {
         }
 
         sim.simulate(1); // Advance the simulation
-
-        frames++; // Increment frame count for this second
-
-        // Calculate FPS
-        if (displayClock.getElapsedTime().asSeconds() >= 0.5f) {
-            fps = static_cast<unsigned int>(frames / displayClock.getElapsedTime().asSeconds());
-            frames = 0;
-            displayClock.restart();
-
-            // Update the FPS text
-            std::stringstream ss;
-            ss << "FPS: " << fps;
-            fpsText.setString(ss.str());
-        }
-
+     
         window.clear();
         for (const auto& particle : sim.getParticles()) {
             sf::CircleShape shape(particle.radius);
