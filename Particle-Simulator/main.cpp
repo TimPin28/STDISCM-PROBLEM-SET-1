@@ -273,33 +273,63 @@ int main() {
     addButton3->setSize("18%", "6%");
     gui.add(addButton3);
 
+    // Basic Particle Input 
+    auto basicX1PosEditBox = tgui::EditBox::create();
+    basicX1PosEditBox->setPosition("75%", "5%");
+    basicX1PosEditBox->setSize("18%", "6%");
+    basicX1PosEditBox->setDefaultText("X1 Coordinate");
+    gui.add(basicX1PosEditBox);
+
+    auto basicY1PosEditBox = tgui::EditBox::create();
+    basicY1PosEditBox->setPosition("75%", "12%");
+    basicY1PosEditBox->setSize("18%", "6%");
+    basicY1PosEditBox->setDefaultText("Y1 Coordinate");
+    gui.add(basicY1PosEditBox);
+
+    auto basicAngleEditBox = tgui::EditBox::create();
+    basicAngleEditBox->setPosition("75%", "19%");
+    basicAngleEditBox->setSize("18%", "6%");
+    basicAngleEditBox->setDefaultText("Angle Directon");
+    gui.add(basicAngleEditBox);
+
+    auto basicVelocityEditBox = tgui::EditBox::create();
+    basicVelocityEditBox->setPosition("75%", "26%");
+    basicVelocityEditBox->setSize("18%", "6%");
+    basicVelocityEditBox->setDefaultText("Velocity");
+    gui.add(basicVelocityEditBox);
+
+    auto basicaddButton = tgui::Button::create("Add Particle");
+    basicaddButton->setPosition("75%", "33%"); // Adjust the percentage as needed based on your layout
+    basicaddButton->setSize("18%", "6%");
+    gui.add(basicaddButton);
+
     // Wall Input Form 
     auto wallX1EditBox = tgui::EditBox::create();
-    wallX1EditBox->setPosition("75%", "5%");
+    wallX1EditBox->setPosition("75%", "40%");
     wallX1EditBox->setSize("18%", "6%");
     wallX1EditBox->setDefaultText("X Position (0-1280)");
     gui.add(wallX1EditBox);
 
     auto wallY1EditBox = tgui::EditBox::create();
-    wallY1EditBox->setPosition("75%", "12%");
+    wallY1EditBox->setPosition("75%", "47%");
     wallY1EditBox->setSize("18%", "6%");
     wallY1EditBox->setDefaultText("Y Position (0-720)");
     gui.add(wallY1EditBox);
 
     auto wallX2EditBox = tgui::EditBox::create();
-    wallX2EditBox->setPosition("75%", "19%");
+    wallX2EditBox->setPosition("75%", "54%");
     wallX2EditBox->setSize("18%", "6%");
     wallX2EditBox->setDefaultText("X Position (0-1280)");
     gui.add(wallX2EditBox);
 
     auto wallY2EditBox = tgui::EditBox::create();
-    wallY2EditBox->setPosition("75%", "26%");
+    wallY2EditBox->setPosition("75%", "61%");
     wallY2EditBox->setSize("18%", "6%");
     wallY2EditBox->setDefaultText("Y Position (0-720)");
     gui.add(wallY2EditBox);
 
     auto addWallButton = tgui::Button::create("Add Wall");
-    addWallButton->setPosition("75%", "33%"); // Adjust the percentage as needed based on your layout
+    addWallButton->setPosition("75%", "68%"); // Adjust the percentage as needed based on your layout
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
 
@@ -326,6 +356,12 @@ int main() {
             endVelocityEditBox->setVisible(false);
             addButton3->setVisible(false);
 
+            basicX1PosEditBox->setVisible(false);
+            basicY1PosEditBox->setVisible(false);
+            basicAngleEditBox->setVisible(false);
+            basicVelocityEditBox->setVisible(false);
+            basicaddButton->setVisible(false);
+
             wallX1EditBox->setVisible(false);
             wallY1EditBox->setVisible(false);
             wallX2EditBox->setVisible(false);
@@ -350,6 +386,12 @@ int main() {
             startVelocityEditBox->setVisible(true);
             endVelocityEditBox->setVisible(true);
             addButton3->setVisible(true);
+
+            basicX1PosEditBox->setVisible(true);
+            basicY1PosEditBox->setVisible(true);
+            basicAngleEditBox->setVisible(true);
+            basicVelocityEditBox->setVisible(true);
+            basicaddButton->setVisible(true);
 
             wallX1EditBox->setVisible(true);
             wallY1EditBox->setVisible(true);
@@ -423,12 +465,11 @@ int main() {
             }
         }
         catch (const std::invalid_argument& e) {
-            std::cerr << "Invalid input: " << e.what() << '\n';
-            // Optionally, display an error message in the GUI
+            std::cerr << "Invalid input: " << e.what() << '\n';        
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            // Optionally, display an error message in the GUI
+            
         }
         });
 
@@ -436,9 +477,9 @@ int main() {
     // Attach an event handler to the "Add Particle" button for Form 3
     addButton3->onPress([&]() {
         try {
-            std::string noParticlesStr = noParticles3->getText().toStdString();
-            std::string startVelocityStr = startVelocityEditBox->getText().toStdString();
-            std::string endVelocityStr = endVelocityEditBox->getText().toStdString();
+            std::string noParticlesStr = noParticles3->getText().toStdString(); // Number of particles
+            std::string startVelocityStr = startVelocityEditBox->getText().toStdString(); // Start velocity
+            std::string endVelocityStr = endVelocityEditBox->getText().toStdString(); // End velocity
 
             int noParticles = std::stoi(noParticlesStr);
             float startVelocity = std::stoi(startVelocityStr);
@@ -456,6 +497,28 @@ int main() {
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input is out of range.\n";
+        }
+        });
+
+    // Attach an event handler to the "Add Particle" button for Basic Add Particle
+    basicaddButton->onPress([&]() {
+        try {
+            float xPos = std::stof(basicX1PosEditBox->getText().toStdString()); // X coordinate
+            float yPos = std::stof(basicY1PosEditBox->getText().toStdString()); // Y coordinate
+            float angle = std::stof(basicAngleEditBox->getText().toStdString()); // Angle
+            float velocity = std::stof(basicVelocityEditBox->getText().toStdString()); // Velocity
+            
+             // Add particle to the simulation
+             sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
+            
+        }
+        catch (const std::invalid_argument& e) {
+            std::cerr << "Invalid input: " << e.what() << '\n';
+            
+        }
+        catch (const std::out_of_range& e) {
+            std::cerr << "Input out of range: " << e.what() << '\n';
+            
         }
         });
 
