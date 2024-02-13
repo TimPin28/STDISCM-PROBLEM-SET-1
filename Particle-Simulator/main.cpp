@@ -202,7 +202,7 @@ int main() {
     Y2PosEditBox->setDefaultText("Y2 Coordinate");
     gui.add(Y2PosEditBox);
 
-    auto addButton1 = tgui::Button::create("Add Particle");
+    auto addButton1 = tgui::Button::create("Add Batch Particle 1");
     addButton1->setPosition("10%", "40%"); // Adjust the percentage as needed based on your layout
     addButton1->setSize("18%", "6%");
     gui.add(addButton1);
@@ -226,7 +226,7 @@ int main() {
     endAngleEditBox->setDefaultText("End Angle");
     gui.add(endAngleEditBox);
 
-    auto addButton2 = tgui::Button::create("Add Particle");
+    auto addButton2 = tgui::Button::create("Add Batch Particle 2");
     addButton2->setPosition("30%", "40%"); // Adjust the percentage as needed based on your layout
     addButton2->setSize("18%", "6%");
     gui.add(addButton2);
@@ -250,7 +250,7 @@ int main() {
     endVelocityEditBox->setDefaultText("End Velocity");
     gui.add(endVelocityEditBox);
 
-    auto addButton3 = tgui::Button::create("Add Particle");
+    auto addButton3 = tgui::Button::create("Add Batch Particle 3");
     addButton3->setPosition("50%", "40%"); // Adjust the percentage as needed based on your layout
     addButton3->setSize("18%", "6%");
     gui.add(addButton3);
@@ -280,7 +280,7 @@ int main() {
     wallY2EditBox->setDefaultText("Y Position (0-720)");
     gui.add(wallY2EditBox);
 
-    auto addWallButton = tgui::Button::create("Add Particle");
+    auto addWallButton = tgui::Button::create("Add Wall");
     addWallButton->setPosition("75%", "33%"); // Adjust the percentage as needed based on your layout
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
@@ -431,18 +431,37 @@ int main() {
             float x2 = std::stof(wallX2EditBox->getText().toStdString());
             float y2 = std::stof(wallY2EditBox->getText().toStdString());
 
+            // Check if the coordinates are within the simulation boundaries
+            if (x1 < 0 || x1 > 1280 || y1 < 0 || y1 > 720 ||
+                x2 < 0 || x2 > 1280 || y2 < 0 || y2 > 720) {
+                throw std::invalid_argument("Wall coordinates are out of bounds.");
+            }
+
+            // Check if the wall endpoints are distinct
+            if (x1 == x2 && y1 == y2) {
+                throw std::invalid_argument("Wall start and end points cannot be the same.");
+            }
+
             sim.addWall(Wall(x1, y1, x2, y2));
 
-            // Optionally reset the wall input fields
+            // Reset the wall input fields
             wallX1EditBox->setText("");
             wallY1EditBox->setText("");
             wallX2EditBox->setText("");
             wallY2EditBox->setText("");
         }
-        catch (const std::exception& e) {
+
+        catch (const std::invalid_argument& e) {
             std::cerr << "Error adding wall: " << e.what() << std::endl;
         }
+        catch (const std::out_of_range& e) {
+            std::cerr << "Input is out of range: " << e.what() << std::endl;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "An error occurred: " << e.what() << std::endl;
+        }
         });
+
 
     while (window.isOpen()) {
         sf::Event event;
