@@ -217,14 +217,14 @@ public:
         for (auto& particle : particles) {
 
             // Single Threaded Version
-            particle.updatePosition(deltaTime, width, height);
-            checkCollisionWithWalls(particle);
+            /*particle.updatePosition(deltaTime, width, height);
+            checkCollisionWithWalls(particle);*/
 
             // Multi-threaded Version
-            //pool.enqueue([&particle, deltaTime, this] {
-            //    particle.updatePosition(deltaTime, this->width, this->height);
-            //    this->checkCollisionWithWalls(particle);
-            //    });
+            pool.enqueue([&particle, deltaTime, this] {
+                particle.updatePosition(deltaTime, this->width, this->height);
+                this->checkCollisionWithWalls(particle);
+                });
         }
 
     }
@@ -239,6 +239,7 @@ int main() {
     window.setFramerateLimit(60);
     
     sf::Clock clock; // Starts the clock for FPS calculation  
+    sf::Clock fpsUpdateClock; // Clock to update the FPS counter every 0.5 seconds
 
     sf::Font font;
     if (!font.loadFromFile("OpenSans-Regular.ttf")) {
@@ -640,11 +641,20 @@ int main() {
         //compute framerate
         float currentTime = clock.restart().asSeconds();
         float fps = 1.0f/ (currentTime);
-        std::stringstream ss;
-        ss.precision(0); // Set precision to zero
-        ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
 
-        fpsText.setString(ss.str());
+        if (fpsUpdateClock.getElapsedTime().asSeconds() >= 0.5f) {
+            std::stringstream ss;
+            ss.precision(0); // Set precision to zero
+            ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
+            fpsText.setString(ss.str());
+            fpsUpdateClock.restart(); // Reset the fpsUpdateClock for the next 0.5-second interval
+        }
+
+        //std::stringstream ss;
+        //ss.precision(0); // Set precision to zero
+        //ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
+
+        //fpsText.setString(ss.str());
 
         sf::Event event;
         while (window.pollEvent(event)) {
