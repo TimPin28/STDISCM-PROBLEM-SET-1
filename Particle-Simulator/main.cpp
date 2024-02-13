@@ -373,37 +373,37 @@ int main() {
     gui.add(basicVelocityEditBox);
 
     auto basicaddButton = tgui::Button::create("Add Particle");
-    basicaddButton->setPosition("75%", "33%"); // Adjust the percentage as needed based on your layout
+    basicaddButton->setPosition("75%", "40%"); // Adjust the percentage as needed based on your layout
     basicaddButton->setSize("18%", "6%");
     gui.add(basicaddButton);
 
     // Wall Input Form 
     auto wallX1EditBox = tgui::EditBox::create();
-    wallX1EditBox->setPosition("75%", "40%");
+    wallX1EditBox->setPosition("75%", "47%");
     wallX1EditBox->setSize("18%", "6%");
     wallX1EditBox->setDefaultText("X Position (0-1280)");
     gui.add(wallX1EditBox);
 
     auto wallY1EditBox = tgui::EditBox::create();
-    wallY1EditBox->setPosition("75%", "47%");
+    wallY1EditBox->setPosition("75%", "54%");
     wallY1EditBox->setSize("18%", "6%");
     wallY1EditBox->setDefaultText("Y Position (0-720)");
     gui.add(wallY1EditBox);
 
     auto wallX2EditBox = tgui::EditBox::create();
-    wallX2EditBox->setPosition("75%", "54%");
+    wallX2EditBox->setPosition("75%", "61%");
     wallX2EditBox->setSize("18%", "6%");
     wallX2EditBox->setDefaultText("X Position (0-1280)");
     gui.add(wallX2EditBox);
 
     auto wallY2EditBox = tgui::EditBox::create();
-    wallY2EditBox->setPosition("75%", "61%");
+    wallY2EditBox->setPosition("75%", "68%");
     wallY2EditBox->setSize("18%", "6%");
     wallY2EditBox->setDefaultText("Y Position (0-720)");
     gui.add(wallY2EditBox);
 
     auto addWallButton = tgui::Button::create("Add Wall");
-    addWallButton->setPosition("75%", "68%"); // Adjust the percentage as needed based on your layout
+    addWallButton->setPosition("75%", "75%"); // Adjust the percentage as needed based on your layout
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
 
@@ -501,6 +501,13 @@ int main() {
                 // Add each particle to the simulation
                 sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
             }
+
+            // Clear the edit boxes after adding particles
+            noParticles1->setText("");
+            X1PosEditBox->setText("");
+            Y1PosEditBox->setText("");
+            X2PosEditBox->setText("");
+            Y2PosEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
@@ -536,6 +543,11 @@ int main() {
                 // Add each particle to the simulation
                 sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
             }
+
+            // Clear the edit boxes after adding particles
+            noParticles2->setText("");
+            startAngleEditBox->setText("");
+            endAngleEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';        
@@ -565,6 +577,11 @@ int main() {
                 // Add each particle to the simulation
                 sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
             }
+
+            // Clear the edit boxes after adding particles
+            noParticles3->setText("");
+            startVelocityEditBox->setText("");
+            endVelocityEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
@@ -585,6 +602,11 @@ int main() {
              // Add particle to the simulation
              sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
             
+             // Clear the edit boxes after adding particles
+             basicX1PosEditBox->setText("");
+             basicY1PosEditBox->setText("");
+             basicAngleEditBox->setText("");
+             basicVelocityEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
