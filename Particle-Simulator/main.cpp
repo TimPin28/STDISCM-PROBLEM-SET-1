@@ -147,10 +147,12 @@ public:
     }
 
     void simulate(double deltaTime) {
+        //Assign each particle to a thread
+
         for (auto& particle : particles) {
             particle.updatePosition(deltaTime, width, height);
             checkCollisionWithWalls(particle);
-            // Boundary checks and collision responses are now handled within updatePosition
+            // Boundary checks and collision responses are handled within updatePosition
         }
     }
 };
@@ -412,7 +414,7 @@ int main() {
             float y2 = std::stof(Y2PosEditBox->getText().toStdString()); // End Y coordinate
 
             float velocity = 100.0f; // Assuming a constant velocity value
-            float angle = 0.0f; // Assuming a constant angle in degrees
+            float angle = 45.0f; // Assuming a constant angle in degrees
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
             float xStep = (x2 - x1) / std::max(1, n - 1); // Calculate the x step between particles
@@ -453,11 +455,7 @@ int main() {
 
             for (int i = 0; i < n; ++i) {
                 float angle = startTheta + i * angularStep; // Calculate the angle for each particle
-                double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
-
-                // Calculate velocity components based on angle
-                double vx = velocity * std::cos(angleRad);
-                double vy = -velocity * std::sin(angleRad); // SFML's y-axis increases downwards
+                double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
                 sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
@@ -479,7 +477,7 @@ int main() {
             int n = std::stoi(noParticles3->getText().toStdString()); // Number of particles
             float startVelocity = std::stof(startVelocityEditBox->getText().toStdString()); // Start velocity
             float endVelocity = std::stof(endVelocityEditBox->getText().toStdString()); // End velocity
-            float angle = 45.0f; // Assuming a constant angle in degrees
+            float angle = 90.0f; // Assuming a constant angle in degrees
             sf::Vector2f startPoint(400, 300); // Assuming a constant start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
@@ -488,11 +486,7 @@ int main() {
             for (int i = 0; i < n; ++i) {
                 float velocity = startVelocity + i * velocityStep; // Calculate the velocity for each particle
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
-
-                // Calculate velocity components based on angle
-                double vx = velocity * std::cos(angleRad);
-                double vy = -velocity * std::sin(angleRad); // SFML's y-axis increases downwards
-
+            
                 // Add each particle to the simulation
                 sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
             }
