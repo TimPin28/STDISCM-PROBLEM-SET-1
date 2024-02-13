@@ -151,7 +151,6 @@ ThreadPool::~ThreadPool() {
         worker.join();
 }
 
-
 class Simulation {
     std::vector<Particle> particles;
     std::vector<Wall> walls;
@@ -649,12 +648,6 @@ int main() {
             fpsText.setString(ss.str());
             fpsUpdateClock.restart(); // Reset the fpsUpdateClock for the next 0.5-second interval
         }
-
-        //std::stringstream ss;
-        //ss.precision(0); // Set precision to zero
-        //ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
-
-        //fpsText.setString(ss.str());
 
         sf::Event event;
         while (window.pollEvent(event)) {
