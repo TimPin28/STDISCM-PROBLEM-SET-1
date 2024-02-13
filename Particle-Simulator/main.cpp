@@ -56,33 +56,34 @@ public:
     Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
 };
 
+float Min(float a, float b) {
+    return (a < b) ? a : b;
+}
+
+float Max(float a, float b) {
+    return (a > b) ? a : b;
+}
+
+// dot function
+float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+
 bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
-    // Convert line segments to a general form Ax + By = C
-    float A1 = nextPos.y - static_cast<float>(particle.y);
-    float B1 = static_cast<float>(particle.x) - nextPos.x;
-    float C1 = A1 * static_cast<float>(particle.x) + B1 * static_cast<float>(particle.y);
+    // This replaces the existing collision detection between the "if (fabs(det) < 1e-9)" block
+    sf::Vector2f wallVector = wall.end - wall.start;
+    sf::Vector2f particlePosition(nextPos.x, nextPos.y);
+    sf::Vector2f wallStartToPoint = particlePosition - wall.start;
 
-    float A2 = wall.end.y - wall.start.y;
-    float B2 = wall.start.x - wall.end.x;
-    float C2 = A2 * wall.start.x + B2 * wall.start.y;
+    float wallLengthSquared = dot(wallVector, wallVector);
+    float t = Max(0.f, Min(1.f, dot(wallStartToPoint, wallVector) / wallLengthSquared));
+    sf::Vector2f projection = wall.start + t * wallVector;
 
-    // Calculate the intersection point
-    float det = A1 * B2 - A2 * B1;
-    if (fabs(det) < 1e-9) { // Lines are parallel
-        return false;
-    }
-    else {
-        float x = (B2 * C1 - B1 * C2) / det;
-        float y = (A1 * C2 - A2 * C1) / det;
+    sf::Vector2f distVector = particlePosition - projection;
+    float distance = sqrt(distVector.x * distVector.x + distVector.y * distVector.y);
 
-        // Check if the intersection point is within both line segments
-        bool onParticlePath = std::min(static_cast<float>(particle.x), nextPos.x) <= x && x <= std::max(static_cast<float>(particle.x), nextPos.x) &&
-            std::min(static_cast<float>(particle.y), nextPos.y) <= y && y <= std::max(static_cast<float>(particle.y), nextPos.y);
-        bool onWall = std::min(wall.start.x, wall.end.x) <= x && x <= std::max(wall.start.x, wall.end.x) &&
-            std::min(wall.start.y, wall.end.y) <= y && y <= std::max(wall.start.y, wall.end.y);
-
-        return onParticlePath && onWall;
-    }
+    return distance <= particle.radius;
 }
 
 class Simulation {
@@ -147,21 +148,21 @@ public:
 
         for (auto& particle : particles) {
 
-            std::thread updateThread([&]() {
-                particle.updatePosition(deltaTime, width, height);
-            });
+            //std::thread updateThread([&]() {
+            //    particle.updatePosition(deltaTime, width, height);
+            //});
 
             // Thread for checking collisions
-            std::thread collisionThread([&]() {
-                checkCollisionWithWalls(particle);
-            });
+            //std::thread collisionThread([&]() {
+            //    checkCollisionWithWalls(particle);
+            //});
 
             // Wait for both threads to complete their tasks
-            updateThread.join();
-            collisionThread.join();
+            //updateThread.join();
+            //collisionThread.join();
 
-            //particle.updatePosition(deltaTime, width, height);
-            //checkCollisionWithWalls(particle);
+            particle.updatePosition(deltaTime, width, height);
+            checkCollisionWithWalls(particle);
             // Boundary checks and collision responses are now handled within updatePosition
         }
     }
