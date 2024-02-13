@@ -26,7 +26,7 @@ public:
     double vx, vy; // Velocity components calculated from angle and velocity
     double radius;
 
-    // Constructor now takes angle (in degrees) and velocity, along with position and radius
+    // Constructor 
 
     Particle(double x, double y, double angle, double velocity, double radius)
         : x(x), y(y), radius(radius) {
@@ -69,13 +69,12 @@ float Max(float a, float b) {
     return (a > b) ? a : b;
 }
 
-// dot function
 float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
     return a.x * b.x + a.y * b.y;
 }
 
 bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
-    // This replaces the existing collision detection between the "if (fabs(det) < 1e-9)" block
+    
     sf::Vector2f wallVector = wall.end - wall.start;
     sf::Vector2f particlePosition(nextPos.x, nextPos.y);
     sf::Vector2f wallStartToPoint = particlePosition - wall.start;
@@ -164,7 +163,6 @@ ThreadPool::~ThreadPool() {
         worker.join();
 }
 
-
 class Simulation {
     std::vector<Particle> particles;
     std::vector<Wall> walls;
@@ -197,7 +195,6 @@ public:
             // Predict next position of the particle
             sf::Vector2f nextPos(particle.x + particle.vx, particle.y + particle.vy);
 
-            // Implement actual collision detection here
             // If a collision is detected:
             if (collisionDetected(particle, nextPos, wall)) {
                 // Step 1: Calculate the original speed
@@ -227,24 +224,14 @@ public:
 
     void simulate(double deltaTime) {
         std::vector<std::future<void>> futures;
-        /*
-        // Iterate over each particle and assign the update task to the pool
-        for (auto& particle : particles) {
-            pool.enqueue([&particle, deltaTime, this]() {
-                // Printing the current thread ID
-                std::cout << "Thread " << std::this_thread::get_id() << " is updating a particle.\n";
-                particle.updatePosition(deltaTime, this->width, this->height);
-                this->checkCollisionWithWalls(particle);
-                });
-        }
-        */
+
         // Update position of each particle in parallel
         for (auto& particle : particles) {
             auto future = pool.enqueue([&particle, deltaTime, this]() {
                 particle.updatePosition(deltaTime, this->width, this->height);
                 this->checkCollisionWithWalls(particle);
                 });
-            //futures.push_back(std::move(future));
+            futures.push_back(std::move(future));
         }
 
         // Wait for all tasks to complete
@@ -252,31 +239,6 @@ public:
             future.get();
         }
     }
-
-
-    //void simulate(double deltaTime) {
-    //    //Assign each particle to a thread
-
-    //    for (auto& particle : particles) {
-
-    //        /*std::thread updateThread([&]() {
-    //            particle.updatePosition(deltaTime, width, height);
-    //        });*/
-
-    //        // Thread for checking collisions
-    //        /*std::thread collisionThread([&]() {
-    //            checkCollisionWithWalls(particle);
-    //        });*/
-
-    //        // Wait for both threads to complete their tasks
-    //        /*updateThread.join();
-    //        collisionThread.join();*/
-
-    //        particle.updatePosition(deltaTime, width, height);
-    //        checkCollisionWithWalls(particle);
-    //        // Boundary checks and collision responses are now handled within updatePosition
-    //    }
-    //}
 };
 
 int main() {
