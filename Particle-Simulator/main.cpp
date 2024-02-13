@@ -228,14 +228,24 @@ public:
     void simulate(double deltaTime) {
         std::vector<std::future<void>> futures;
 
-        // Update position of each particle in parallel
+        // Iterate over each particle and assign the update task to the pool
         for (auto& particle : particles) {
-            auto future = pool.enqueue([&particle, deltaTime, this]() {
+            pool.enqueue([&particle, deltaTime, this]() {
+                // Printing the current thread ID
+                std::cout << "Thread " << std::this_thread::get_id() << " is updating a particle.\n";
                 particle.updatePosition(deltaTime, this->width, this->height);
                 this->checkCollisionWithWalls(particle);
                 });
-            futures.push_back(std::move(future));
         }
+
+        // Update position of each particle in parallel
+        //for (auto& particle : particles) {
+        //    auto future = pool.enqueue([&particle, deltaTime, this]() {
+        //        particle.updatePosition(deltaTime, this->width, this->height);
+        //        this->checkCollisionWithWalls(particle);
+        //        });
+        //    futures.push_back(std::move(future));
+        //}
 
         // Wait for all tasks to complete
         for (auto& future : futures) {
