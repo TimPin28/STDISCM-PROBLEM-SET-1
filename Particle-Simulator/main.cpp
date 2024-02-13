@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
+#include <thread>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -26,11 +27,6 @@ public:
         : x(x), y(y), radius(radius) {
 
         // Calculate velocity components based on angle and velocity
-        // print cos(angle) and sin(angle)
-        std::cout << "cos(angle): " << cos(angle) << std::endl;
-        std::cout << "sin(angle): " << sin(angle) << std::endl;
-        std::cout << "Velocity: " << velocity << std::endl;
-
         double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
 
         vx = velocity * cos(angleRad);
@@ -150,9 +146,23 @@ public:
         //Assign each particle to a thread
 
         for (auto& particle : particles) {
-            particle.updatePosition(deltaTime, width, height);
-            checkCollisionWithWalls(particle);
-            // Boundary checks and collision responses are handled within updatePosition
+
+            std::thread updateThread([&]() {
+                particle.updatePosition(deltaTime, width, height);
+            });
+
+            // Thread for checking collisions
+            std::thread collisionThread([&]() {
+                checkCollisionWithWalls(particle);
+            });
+
+            // Wait for both threads to complete their tasks
+            updateThread.join();
+            collisionThread.join();
+
+            //particle.updatePosition(deltaTime, width, height);
+            //checkCollisionWithWalls(particle);
+            // Boundary checks and collision responses are now handled within updatePosition
         }
     }
 };
@@ -451,7 +461,18 @@ int main() {
             sf::Vector2f startPoint(640, 360); // Example start point, adjust as needed
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+
+            // print starTheta and endTheta
+            std::cout << "Start Theta: " << startTheta << std::endl;
+            std::cout << "End Theta: " << endTheta << std::endl;
+
             float angularStep = (n > 1) ? (endTheta - startTheta) / (n - 1) : 0;
+
+            if (startTheta == 0.0f && endTheta == 360.0f) {
+                angularStep = (n > 1) ? (endTheta - startTheta) / (n) : 0;
+                // print angularStep
+                std::cout << "Angular Step: " << angularStep << std::endl;
+            }
 
             for (int i = 0; i < n; ++i) {
                 float angle = startTheta + i * angularStep; // Calculate the angle for each particle
