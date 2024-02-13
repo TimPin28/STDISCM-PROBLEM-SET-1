@@ -157,6 +157,9 @@ public:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
+
+    // Set the frame rate limit
+    window.setFramerateLimit(60);
     
     sf::Clock clock; // Starts the clock for FPS calculation
     sf::Clock displayClock; // Separate clock for controlling display update rate
