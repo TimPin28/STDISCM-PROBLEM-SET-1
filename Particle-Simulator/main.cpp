@@ -7,6 +7,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <sstream>
 #include <vector>
 
 #ifndef M_PI
@@ -88,7 +89,6 @@ bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, co
     }
 }
 
-
 class Simulation {
     std::vector<Particle> particles;
     std::vector<Wall> walls;
@@ -157,6 +157,21 @@ public:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
+    
+    sf::Clock clock; // Starts the clock for FPS calculation
+    sf::Clock displayClock; // Separate clock for controlling display update rate
+    unsigned int frames = 0;
+    unsigned int fps = 0;
+
+    sf::Font font;
+    if (!font.loadFromFile("OpenSans-Regular.ttf")) {
+        std::cerr << "Could not load font\n";
+        return -1;
+    }
+
+    sf::Text fpsText("", font, 20);
+    fpsText.setFillColor(sf::Color::White);
+    fpsText.setPosition(5.f, 5.f); // Position the FPS counter in the top-left corner
 
     tgui::Gui gui(window); // Initialize TGUI Gui object for the window
 
@@ -474,6 +489,20 @@ int main() {
 
         sim.simulate(0.01); // Advance the simulation
 
+        frames++; // Increment frame count for this second
+
+        // Calculate FPS
+        if (displayClock.getElapsedTime().asSeconds() >= 0.5f) {
+            fps = static_cast<unsigned int>(frames / displayClock.getElapsedTime().asSeconds());
+            frames = 0;
+            displayClock.restart();
+
+            // Update the FPS text
+            std::stringstream ss;
+            ss << "FPS: " << fps;
+            fpsText.setString(ss.str());
+        }
+
         window.clear();
         for (const auto& particle : sim.getParticles()) {
             sf::CircleShape shape(particle.radius);
@@ -491,8 +520,10 @@ int main() {
             window.draw(line);
         }
 
+        window.draw(fpsText); // Draw the FPS counter on the window
         gui.draw(); // Draw the GUI
         window.display();
+        
     }
 
     return 0;
