@@ -391,29 +391,41 @@ int main() {
 
     // Attach an event handler to the "Add Particle" button for Form 2
     addButton2->onPress([&]() {
+        // Ensure you've defined or have access to sim, which is your Simulation instance
         try {
-            std::string noParticlesStr = noParticles2->getText().toStdString();
-            std::string startAngleStr = startAngleEditBox->getText().toStdString(); 
-            std::string endAngleStr = endAngleEditBox->getText().toStdString();
+            int n = std::stoi(noParticles2->getText().toStdString()); // Number of particles
+            float startTheta = std::stof(startAngleEditBox->getText().toStdString()); // Start angle in degrees
+            float endTheta = std::stof(endAngleEditBox->getText().toStdString()); // End angle in degrees
 
-            int noParticles = std::stoi(noParticlesStr);
-            float startAngle = std::stoi(startAngleStr);
-            float endAngle = std::stoi(endAngleStr);
+            // Assuming constant velocity and a starting point for all particles
+            float velocity = 100.0f; // Example velocity
+            sf::Vector2f startPoint(640, 360); // Example start point, adjust as needed
 
-            float xPosition = 400;
-            float yPosition = 400;
-            float velocity = 5;
-            
-            // Add particle at the specified position
-            //sim.addParticle(Particle(xPosition, yPosition, angle, velocity, 10));
+            if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            float angularStep = (n > 1) ? (endTheta - startTheta) / (n - 1) : 0;
+
+            for (int i = 0; i < n; ++i) {
+                float angle = startTheta + i * angularStep; // Calculate the angle for each particle
+                double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
+
+                // Calculate velocity components based on angle
+                double vx = velocity * std::cos(angleRad);
+                double vy = -velocity * std::sin(angleRad); // SFML's y-axis increases downwards
+
+                // Add each particle to the simulation
+                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
+            }
         }
         catch (const std::invalid_argument& e) {
-            std::cerr << "Invalid input. Please enter numerical values.\n";
+            std::cerr << "Invalid input: " << e.what() << '\n';
+            // Optionally, display an error message in the GUI
         }
         catch (const std::out_of_range& e) {
-            std::cerr << "Input is out of range.\n";
+            std::cerr << "Input out of range: " << e.what() << '\n';
+            // Optionally, display an error message in the GUI
         }
         });
+
 
     // Attach an event handler to the "Add Particle" button for Form 3
     addButton3->onPress([&]() {
