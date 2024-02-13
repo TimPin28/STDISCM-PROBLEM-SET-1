@@ -574,6 +574,15 @@ int main() {
 
 
     while (window.isOpen()) {
+        //compute framerate
+        float currentTime = clock.restart().asSeconds();
+        float fps = 1.0f / (currentTime);
+        std::stringstream ss;
+        ss.precision(0); // Set precision to zero
+        ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
+
+        fpsText.setString(ss.str());
+
         sf::Event event;
         while (window.pollEvent(event)) {
             gui.handleEvent(event); // Pass events to the GUI
@@ -583,20 +592,6 @@ int main() {
         }
 
         sim.simulate(1); // Advance the simulation
-
-        frames++; // Increment frame count for this second
-
-        // Calculate FPS
-        if (displayClock.getElapsedTime().asSeconds() >= 0.5f) {
-            fps = static_cast<unsigned int>(frames / displayClock.getElapsedTime().asSeconds());
-            frames = 0;
-            displayClock.restart();
-
-            // Update the FPS text
-            std::stringstream ss;
-            ss << "FPS: " << fps;
-            fpsText.setString(ss.str());
-        }
 
         window.clear();
         for (const auto& particle : sim.getParticles()) {
