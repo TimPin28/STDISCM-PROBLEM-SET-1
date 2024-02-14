@@ -6,15 +6,7 @@
 #include <iostream>
 #include <cmath>
 #include <stdexcept>
-#include <algorithm>
 #include <sstream>
-#include <vector>
-#include <thread>
-#include <future>
-#include <queue>
-#include <functional>
-#include <mutex>
-#include <condition_variable>
 #include "Particle.h" 
 #include "Wall.h" 
 #include "ThreadPool.h" 
@@ -102,7 +94,7 @@ int main() {
     gui.add(Y2PosEditBox);
 
     auto addButton1 = tgui::Button::create("Add Batch Particle 1");
-    addButton1->setPosition("10%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton1->setPosition("10%", "40%"); // Adjust the percentage for layout
     addButton1->setSize("18%", "6%");
     gui.add(addButton1);
 
@@ -126,7 +118,7 @@ int main() {
     gui.add(endAngleEditBox);
 
     auto addButton2 = tgui::Button::create("Add Batch Particle 2");
-    addButton2->setPosition("30%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton2->setPosition("30%", "40%"); // Adjust the percentage for layout
     addButton2->setSize("18%", "6%");
     gui.add(addButton2);
 
@@ -150,7 +142,7 @@ int main() {
     gui.add(endVelocityEditBox);
 
     auto addButton3 = tgui::Button::create("Add Batch Particle 3");
-    addButton3->setPosition("50%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton3->setPosition("50%", "40%"); // Adjust the percentage for layout
     addButton3->setSize("18%", "6%");
     gui.add(addButton3);
 
@@ -180,7 +172,7 @@ int main() {
     gui.add(basicVelocityEditBox);
 
     auto basicaddButton = tgui::Button::create("Add Particle");
-    basicaddButton->setPosition("75%", "40%"); // Adjust the percentage as needed based on your layout
+    basicaddButton->setPosition("75%", "40%"); // Adjust the percentage for layout
     basicaddButton->setSize("18%", "6%");
     gui.add(basicaddButton);
 
@@ -210,7 +202,7 @@ int main() {
     gui.add(wallY2EditBox);
 
     auto addWallButton = tgui::Button::create("Add Wall");
-    addWallButton->setPosition("75%", "75%"); // Adjust the percentage as needed based on your layout
+    addWallButton->setPosition("75%", "75%"); // Adjust the percentage for layout
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
 
@@ -382,9 +374,9 @@ int main() {
             sf::Vector2f startPoint(400, 300); // constant start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
-            if (startVelocity < 0) throw std::invalid_argument("Start Velocity must be positive.");
-            if (endVelocity < 0) throw std::invalid_argument("End Velocity must be positive.");
-            if (startVelocity > endVelocity) throw std::invalid_argument("Start Velocity must be less than End Velocity.");
+            if (startVelocity <= 0) throw std::invalid_argument("Start Velocity must be greater than 0.");
+            if (endVelocity <= 0) throw std::invalid_argument("End Velocity must be greater than 0.");
+            if (startVelocity >= endVelocity) throw std::invalid_argument("Start Velocity must be less than End Velocity.");
             float velocityStep = (endVelocity - startVelocity) / std::max(1, n - 1); // Calculate the velocity step between particles
 
             for (int i = 0; i < n; ++i) {
@@ -419,7 +411,7 @@ int main() {
             if (xPos < 0 || xPos > 1280) throw std::invalid_argument("X coordinate must be between 0 and 1280.");
             if (yPos < 0 || yPos > 720) throw std::invalid_argument("Y coordinate must be between 0 and 720.");
             if (angle < 0 || angle > 360) throw std::invalid_argument("Angle must be between 0 and 360.");
-            if (velocity < 0) throw std::invalid_argument("Velocity must be positive.");
+            if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
             
              // Add particle to the simulation
              sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
