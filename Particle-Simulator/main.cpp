@@ -283,7 +283,6 @@ int main() {
             addWallButton->setVisible(true);
         }
      });
-    //sim.addParticle(Particle(640, 360, 45, 100, 10)); // Add a particle at the center of the window
 
     // Attach an event handler to the "Add Particle" button for Form 1
     addButton1->onPress([&]() {
@@ -298,6 +297,11 @@ int main() {
             float angle = 45.0f; // constant angle in degrees
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            if (x1 < 0 || x1 > 1280) throw std::invalid_argument("X1 coordinate must be between 0 and 1280.");
+            if (y1 < 0 || y1 > 720) throw std::invalid_argument("Y1 coordinate must be between 0 and 720.");
+            if (x2 < 0 || x2 > 1280) throw std::invalid_argument("X2 coordinate must be between 0 and 1280.");
+            if (y2 < 0 || y2 > 720) throw std::invalid_argument("Y2 coordinate must be between 0 and 720.");
+
             float xStep = (x2 - x1) / std::max(1, n - 1); // Calculate the x step between particles
             float yStep = (y2 - y1) / std::max(1, n - 1); // Calculate the y step between particles
 
@@ -306,7 +310,7 @@ int main() {
                 float yPos = y1 + i * yStep; // Calculate the y position for each particle
 
                 // Add each particle to the simulation
-                sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
+                sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -336,6 +340,9 @@ int main() {
             sf::Vector2f startPoint(640, 360); // start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            if (startTheta < 0 || startTheta > 360) throw std::invalid_argument("Start Theta must be positive and must be less than 360.");
+            if (endTheta < 0|| endTheta> 360) throw std::invalid_argument("End Theta must be positive and must be less than or equal 360.");
+            if (startTheta > endTheta) throw std::invalid_argument("Start Theta must be less than End Theta.");
 
             float angularStep = (n > 1) ? (endTheta - startTheta) / (n - 1) : 0;
 
@@ -348,7 +355,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
+                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -371,10 +378,13 @@ int main() {
             int n = std::stoi(noParticles3->getText().toStdString()); // Number of particles
             float startVelocity = std::stof(startVelocityEditBox->getText().toStdString()); // Start velocity
             float endVelocity = std::stof(endVelocityEditBox->getText().toStdString()); // End velocity
-            float angle = 90.0f; // constant angle in degrees
+            float angle = 45.0f; // constant angle in degrees
             sf::Vector2f startPoint(400, 300); // constant start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            if (startVelocity < 0) throw std::invalid_argument("Start Velocity must be positive.");
+            if (endVelocity < 0) throw std::invalid_argument("End Velocity must be positive.");
+            if (startVelocity > endVelocity) throw std::invalid_argument("Start Velocity must be less than End Velocity.");
             float velocityStep = (endVelocity - startVelocity) / std::max(1, n - 1); // Calculate the velocity step between particles
 
             for (int i = 0; i < n; ++i) {
@@ -382,7 +392,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
             
                 // Add each particle to the simulation
-                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
+                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -405,9 +415,14 @@ int main() {
             float yPos = std::stof(basicY1PosEditBox->getText().toStdString()); // Y coordinate
             float angle = std::stof(basicAngleEditBox->getText().toStdString()); // Angle
             float velocity = std::stof(basicVelocityEditBox->getText().toStdString()); // Velocity
+
+            if (xPos < 0 || xPos > 1280) throw std::invalid_argument("X coordinate must be between 0 and 1280.");
+            if (yPos < 0 || yPos > 720) throw std::invalid_argument("Y coordinate must be between 0 and 720.");
+            if (angle < 0 || angle > 360) throw std::invalid_argument("Angle must be between 0 and 360.");
+            if (velocity < 0) throw std::invalid_argument("Velocity must be positive.");
             
              // Add particle to the simulation
-             sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
+             sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
             
              // Clear the edit boxes after adding particles
              basicX1PosEditBox->setText("");
@@ -473,7 +488,7 @@ int main() {
         if (fpsUpdateClock.getElapsedTime().asSeconds() >= 0.5f) {
             std::stringstream ss;
             ss.precision(0); // Set precision to zero
-            ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
+            ss << "FPS: " << std::fixed << fps; 
             fpsText.setString(ss.str());
             fpsUpdateClock.restart(); // Reset the fpsUpdateClock for the next 0.5-second interval
         }
@@ -489,6 +504,7 @@ int main() {
         sim.simulate(1); // Advance the simulation
      
         window.clear();
+        // Draw particles
         for (const auto& particle : sim.getParticles()) {
             sf::CircleShape shape(particle.radius);
             shape.setFillColor(sf::Color::Green);
