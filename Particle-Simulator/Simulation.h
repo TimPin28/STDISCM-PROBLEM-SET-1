@@ -23,16 +23,6 @@ private:
     std::vector<Wall> walls;
     double width, height;
     ThreadPool pool;
-
-    void checkCollisionWithWalls(Particle& particle);
-
-    bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall);
-
-    float Min(float a, float b);
-
-    float Max(float a, float b);
-
-    float dot(const sf::Vector2f& a, const sf::Vector2f& b);
 };
 
 #endif // SIMULATION_H
