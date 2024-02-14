@@ -20,6 +20,13 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+class Wall {
+public:
+    sf::Vector2f start, end;
+
+    Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
+};
+
 class Particle {
 public:
     double x, y; // Position
@@ -38,7 +45,7 @@ public:
         vy = -velocity * sin(angleRad); // Negative since SFML's y-axis increases downwards
     }
 
-    void updatePosition(double deltaTime, double simWidth, double simHeight) {
+    void updatePosition(double deltaTime, double simWidth, double simHeight, const std::vector<Wall>& walls) {
         x += vx * deltaTime;
         y += vy * deltaTime;
 
@@ -51,43 +58,66 @@ public:
             vy = -vy; // Invert velocity in y-direction
             y = (y - radius < 0) ? radius : simHeight - radius; // Correct position to stay within bounds
         }
+
+        for (auto& wall : walls) {
+            sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
+            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall, assuming wall.end and wall.start are sf::Vector2f
+
+            // Normalize N
+            float length = std::sqrt(N.x * N.x + N.y * N.y);
+            N.x /= length;
+            N.y /= length;
+
+            // Predict next position of the particle
+            sf::Vector2f nextPos(x + vx, y + vy);
+
+            // If a collision is detected:
+            if (collisionDetected(*this, nextPos, wall)) {
+                // Step 1: Calculate the original speed
+                float originalSpeed = std::sqrt(vx * vx + vy * vy);
+
+                // Step 2: Reflect velocity
+                float dotProduct = vx * N.x + vy * N.y;
+                vx -= 2 * dotProduct * N.x;
+                vy -= 2 * dotProduct * N.y;
+
+                // Step 3: Normalize the reflected velocity vector
+                float reflectedSpeed = std::sqrt(vx * vx + vy * vy);
+                vx = (vx / reflectedSpeed) * originalSpeed;
+                vy = (vy / reflectedSpeed) * originalSpeed;
+            }
+
+        }
+    }
+
+    float Min(float a, float b) {
+        return (a < b) ? a : b;
+    }
+
+    float Max(float a, float b) {
+        return (a > b) ? a : b;
+    }
+
+    float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
+        return a.x * b.x + a.y * b.y;
+    }
+
+    bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
+
+        sf::Vector2f wallVector = wall.end - wall.start;
+        sf::Vector2f particlePosition(nextPos.x, nextPos.y);
+        sf::Vector2f wallStartToPoint = particlePosition - wall.start;
+
+        float wallLengthSquared = dot(wallVector, wallVector);
+        float t = Max(0.f, Min(1.f, dot(wallStartToPoint, wallVector) / wallLengthSquared));
+        sf::Vector2f projection = wall.start + t * wallVector;
+
+        sf::Vector2f distVector = particlePosition - projection;
+        float distance = sqrt(distVector.x * distVector.x + distVector.y * distVector.y);
+
+        return distance <= particle.radius;
     }
 };
-
-class Wall {
-public:
-    sf::Vector2f start, end;
-
-    Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
-};
-
-float Min(float a, float b) {
-    return (a < b) ? a : b;
-}
-
-float Max(float a, float b) {
-    return (a > b) ? a : b;
-}
-
-float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
-    return a.x * b.x + a.y * b.y;
-}
-
-bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
-    
-    sf::Vector2f wallVector = wall.end - wall.start;
-    sf::Vector2f particlePosition(nextPos.x, nextPos.y);
-    sf::Vector2f wallStartToPoint = particlePosition - wall.start;
-
-    float wallLengthSquared = dot(wallVector, wallVector);
-    float t = Max(0.f, Min(1.f, dot(wallStartToPoint, wallVector) / wallLengthSquared));
-    sf::Vector2f projection = wall.start + t * wallVector;
-
-    sf::Vector2f distVector = particlePosition - projection;
-    float distance = sqrt(distVector.x * distVector.x + distVector.y * distVector.y);
-
-    return distance <= particle.radius;
-}
 
 class ThreadPool {
 public:
@@ -170,38 +200,6 @@ public:
         walls.push_back(wall);
     }
 
-    void checkCollisionWithWalls(Particle& particle) {
-        for (auto& wall : walls) {
-            sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
-            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall, assuming wall.end and wall.start are sf::Vector2f
-
-            // Normalize N
-            float length = std::sqrt(N.x * N.x + N.y * N.y);
-            N.x /= length;
-            N.y /= length;
-
-            // Predict next position of the particle
-            sf::Vector2f nextPos(particle.x + particle.vx, particle.y + particle.vy);
-
-            // If a collision is detected:
-            if (collisionDetected(particle, nextPos, wall)) {
-                // Step 1: Calculate the original speed
-                float originalSpeed = std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
-
-                // Step 2: Reflect velocity
-                float dotProduct = particle.vx * N.x + particle.vy * N.y;
-                particle.vx -= 2 * dotProduct * N.x;
-                particle.vy -= 2 * dotProduct * N.y;
-
-                // Step 3: Normalize the reflected velocity vector
-                float reflectedSpeed = std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
-                particle.vx = (particle.vx / reflectedSpeed) * originalSpeed;
-                particle.vy = (particle.vy / reflectedSpeed) * originalSpeed;
-            }
-
-        }
-    }
-
     const std::vector<Particle>& getParticles() const {
         return particles;
     }
@@ -221,9 +219,8 @@ public:
 
             // Multi-threaded Version
             pool.enqueue([&particle, deltaTime, this] {
-                particle.updatePosition(deltaTime, this->width, this->height);
-                this->checkCollisionWithWalls(particle);
-                });
+                particle.updatePosition(deltaTime, this->width, this->height, this->walls);
+            });
         }
 
     }
