@@ -61,7 +61,7 @@ public:
 
         for (auto& wall : walls) {
             sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
-            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall, assuming wall.end and wall.start are sf::Vector2f
+            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall
 
             // Normalize N
             float length = std::sqrt(N.x * N.x + N.y * N.y);
