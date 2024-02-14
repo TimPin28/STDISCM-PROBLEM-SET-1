@@ -214,8 +214,7 @@ public:
         for (auto& particle : particles) {
 
             // Single Threaded Version
-            /*particle.updatePosition(deltaTime, width, height);
-            checkCollisionWithWalls(particle);*/
+            /*particle.updatePosition(deltaTime, width, height, walls);*/
 
             // Multi-threaded Version
             pool.enqueue([&particle, deltaTime, this] {
