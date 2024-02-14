@@ -6,13 +6,10 @@
 #include <iostream>
 #include <cmath>
 #include <stdexcept>
-#include <algorithm>
 #include <sstream>
 #include <vector>
 #include <thread>
-#include <future>
 #include <queue>
-#include <functional>
 #include <mutex>
 #include <condition_variable>
 
@@ -89,7 +86,7 @@ public:
 
         }
     }
-
+    
     float Min(float a, float b) {
         return (a < b) ? a : b;
     }
@@ -101,7 +98,7 @@ public:
     float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
         return a.x * b.x + a.y * b.y;
     }
-
+    
     bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
 
         sf::Vector2f wallVector = wall.end - wall.start;
@@ -251,7 +248,7 @@ int main() {
     // Check box to toggle visibility of input fields
     auto toggleCheckbox = tgui::CheckBox::create();
     toggleCheckbox->setPosition("10%", "1%");
-    toggleCheckbox->setText("Toggle Edit Boxes");
+    toggleCheckbox->setText("Toggle Input Boxes");
     gui.add(toggleCheckbox);
 
     auto renderer = toggleCheckbox->getRenderer();
@@ -269,25 +266,25 @@ int main() {
     auto X1PosEditBox = tgui::EditBox::create();
     X1PosEditBox->setPosition("10%", "12%");
     X1PosEditBox->setSize("18%", "6%");
-    X1PosEditBox->setDefaultText("X1 Coordinate");
+    X1PosEditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(X1PosEditBox);
 
     auto Y1PosEditBox = tgui::EditBox::create();
     Y1PosEditBox->setPosition("10%", "19%");
     Y1PosEditBox->setSize("18%", "6%");
-    Y1PosEditBox->setDefaultText("Y1 Coordinate");
+    Y1PosEditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(Y1PosEditBox);
 
     auto X2PosEditBox = tgui::EditBox::create();
     X2PosEditBox->setPosition("10%", "26%");
     X2PosEditBox->setSize("18%", "6%");
-    X2PosEditBox->setDefaultText("X2 Coordinate");
+    X2PosEditBox->setDefaultText("X2 Coordinate (0-1280)");
     gui.add(X2PosEditBox);
 
     auto Y2PosEditBox = tgui::EditBox::create();
     Y2PosEditBox->setPosition("10%", "33%");
     Y2PosEditBox->setSize("18%", "6%");
-    Y2PosEditBox->setDefaultText("Y2 Coordinate");
+    Y2PosEditBox->setDefaultText("Y2 Coordinate (0-720)");
     gui.add(Y2PosEditBox);
 
     auto addButton1 = tgui::Button::create("Add Batch Particle 1");
@@ -305,13 +302,13 @@ int main() {
     auto startAngleEditBox = tgui::EditBox::create();
     startAngleEditBox->setPosition("30%", "12%");
     startAngleEditBox->setSize("18%", "6%");
-    startAngleEditBox->setDefaultText("Start Angle");
+    startAngleEditBox->setDefaultText("Start Angle (0-360)");
     gui.add(startAngleEditBox);
 
     auto endAngleEditBox = tgui::EditBox::create();
     endAngleEditBox->setPosition("30%", "19%");
     endAngleEditBox->setSize("18%", "6%");
-    endAngleEditBox->setDefaultText("End Angle");
+    endAngleEditBox->setDefaultText("End Angle (0-360)");
     gui.add(endAngleEditBox);
 
     auto addButton2 = tgui::Button::create("Add Batch Particle 2");
@@ -347,19 +344,19 @@ int main() {
     auto basicX1PosEditBox = tgui::EditBox::create();
     basicX1PosEditBox->setPosition("75%", "5%");
     basicX1PosEditBox->setSize("18%", "6%");
-    basicX1PosEditBox->setDefaultText("X1 Coordinate");
+    basicX1PosEditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(basicX1PosEditBox);
 
     auto basicY1PosEditBox = tgui::EditBox::create();
     basicY1PosEditBox->setPosition("75%", "12%");
     basicY1PosEditBox->setSize("18%", "6%");
-    basicY1PosEditBox->setDefaultText("Y1 Coordinate");
+    basicY1PosEditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(basicY1PosEditBox);
 
     auto basicAngleEditBox = tgui::EditBox::create();
     basicAngleEditBox->setPosition("75%", "19%");
     basicAngleEditBox->setSize("18%", "6%");
-    basicAngleEditBox->setDefaultText("Angle Directon");
+    basicAngleEditBox->setDefaultText("Angle Directon (0-360)");
     gui.add(basicAngleEditBox);
 
     auto basicVelocityEditBox = tgui::EditBox::create();
@@ -377,25 +374,25 @@ int main() {
     auto wallX1EditBox = tgui::EditBox::create();
     wallX1EditBox->setPosition("75%", "47%");
     wallX1EditBox->setSize("18%", "6%");
-    wallX1EditBox->setDefaultText("X Position (0-1280)");
+    wallX1EditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(wallX1EditBox);
 
     auto wallY1EditBox = tgui::EditBox::create();
     wallY1EditBox->setPosition("75%", "54%");
     wallY1EditBox->setSize("18%", "6%");
-    wallY1EditBox->setDefaultText("Y Position (0-720)");
+    wallY1EditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(wallY1EditBox);
 
     auto wallX2EditBox = tgui::EditBox::create();
     wallX2EditBox->setPosition("75%", "61%");
     wallX2EditBox->setSize("18%", "6%");
-    wallX2EditBox->setDefaultText("X Position (0-1280)");
+    wallX2EditBox->setDefaultText("X2 Coordinate (0-1280)");
     gui.add(wallX2EditBox);
 
     auto wallY2EditBox = tgui::EditBox::create();
     wallY2EditBox->setPosition("75%", "68%");
     wallY2EditBox->setSize("18%", "6%");
-    wallY2EditBox->setDefaultText("Y Position (0-720)");
+    wallY2EditBox->setDefaultText("Y2 Coordinate (0-720)");
     gui.add(wallY2EditBox);
 
     auto addWallButton = tgui::Button::create("Add Wall");
