@@ -20,47 +20,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-class Particle {
-public:
-    double x, y; // Position
-    double vx, vy; // Velocity components calculated from angle and velocity
-    double radius;
-
-    // Constructor 
-
-    Particle(double x, double y, double angle, double velocity, double radius)
-        : x(x), y(y), radius(radius) {
-
-        // Calculate velocity components based on angle and velocity
-        double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
-
-        vx = velocity * cos(angleRad);
-        vy = -velocity * sin(angleRad); // Negative since SFML's y-axis increases downwards
-    }
-
-    void updatePosition(double deltaTime, double simWidth, double simHeight) {
-        x += vx * deltaTime;
-        y += vy * deltaTime;
-
-        // Check for collisions with the simulation boundaries
-        if (x - radius < 0 || x + radius > simWidth) { // Left or right wall collision
-            vx = -vx; // Invert velocity in x-direction
-            x = (x - radius < 0) ? radius : simWidth - radius; // Correct position to stay within bounds
-        }
-        if (y - radius < 0 || y + radius > simHeight) { // Top or bottom wall collision
-            vy = -vy; // Invert velocity in y-direction
-            y = (y - radius < 0) ? radius : simHeight - radius; // Correct position to stay within bounds
-        }
-    }
-};
-
-class Wall {
-public:
-    sf::Vector2f start, end;
-
-    Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
-};
-
 float Min(float a, float b) {
     return (a < b) ? a : b;
 }
@@ -88,22 +47,6 @@ bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, co
 
     return distance <= particle.radius;
 }
-
-class ThreadPool {
-public:
-    ThreadPool(size_t threads);
-    template<class F, class... Args>
-    void enqueue(F&& f, Args&&... args);
-    ~ThreadPool();
-
-private:
-    std::vector<std::thread> workers;
-    std::queue<std::function<void()>> tasks;
-
-    std::mutex queue_mutex;
-    std::condition_variable condition;
-    bool stop;
-};
 
 // Constructor
 ThreadPool::ThreadPool(size_t threads) : stop(false) {
