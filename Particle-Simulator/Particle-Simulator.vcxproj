@@ -134,6 +134,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Particle.cpp" />
+    <ClCompile Include="Simulation.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
+    <ClCompile Include="Wall.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Particle.h" />
+    <ClInclude Include="Simulation.h" />
+    <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="Wall.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

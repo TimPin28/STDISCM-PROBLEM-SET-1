@@ -18,5 +18,31 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Particle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Wall.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Simulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Particle.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Wall.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Simulation.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
