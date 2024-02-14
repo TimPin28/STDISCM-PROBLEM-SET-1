@@ -20,22 +20,6 @@ ThreadPool::ThreadPool(size_t threads) : stop(false) {
             });
 }
 
-// Add new work item to the pool
-template<class F, class... Args>
-void ThreadPool::enqueue(F&& f, Args&&... args) {
-    auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-
-        // don't allow enqueueing after stopping the pool
-        if (stop)
-            throw std::runtime_error("enqueue on stopped ThreadPool");
-
-        tasks.emplace(task);
-    }
-    condition.notify_one();
-}
-
 // Destructor joins all threads
 ThreadPool::~ThreadPool() {
     {
