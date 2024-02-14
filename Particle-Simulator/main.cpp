@@ -692,6 +692,7 @@ int main() {
         sim.simulate(1); // Advance the simulation
      
         window.clear();
+        //Draw particles
         for (const auto& particle : sim.getParticles()) {
             sf::CircleShape shape(particle.radius);
             shape.setFillColor(sf::Color::Green);
