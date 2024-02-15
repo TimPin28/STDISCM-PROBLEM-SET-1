@@ -4,14 +4,11 @@
 #include <TGUI/Widget.hpp>
 #include <TGUI/String.hpp>
 #include <iostream>
-#include <cmath>
 #include <stdexcept>
 #include <sstream>
-#include <vector>
 #include <thread>
 #include <queue>
 #include <mutex>
-#include <condition_variable>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
