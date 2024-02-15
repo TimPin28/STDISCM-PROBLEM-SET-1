@@ -115,14 +115,15 @@ public:
 
 class ThreadPool {
 public:
-    ThreadPool(size_t threads);
-    template<class F, class... Args>
-    void enqueue(F&& f, Args&&... args);
+    ThreadPool(size_t threads, std::vector<Particle>& particles);
     ~ThreadPool();
+    template<class F, class... Args>
+    void enqueue(F&& f, Args&&... args);  
 
 private:
     std::vector<std::thread> workers;
-    std::queue<std::function<void()>> tasks;
+    std::atomic<size_t> currentIndex;
+    std::vector<Particle>& particles;
 
     std::mutex queue_mutex;
     std::condition_variable condition;
@@ -130,20 +131,23 @@ private:
 };
 
 // Constructor
-ThreadPool::ThreadPool(size_t threads) : stop(false) {
+ThreadPool::ThreadPool(size_t threads, std::vector<Particle>& particles)
+    : currentIndex(0), particles(particles), stop(false) {
     for (size_t i = 0; i < threads; ++i)
         workers.emplace_back([this] {
         for (;;) {
-            std::function<void()> task;
-            {
-                std::unique_lock<std::mutex> lock(this->queue_mutex);
-                this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
-                if (this->stop && this->tasks.empty())
-                    return;
-                task = std::move(this->tasks.front());
-                this->tasks.pop();
+            std::unique_lock<std::mutex> lock(this->queue_mutex);
+            this->condition.wait(lock, [this] { return this->stop || (this->currentIndex < this->particles.size()); });
+            if (this->stop && (this->currentIndex >= this->particles.size()))
+                return;
+
+            size_t index = this->currentIndex++;
+            lock.unlock(); // Unlock before processing to allow other threads to work on the next particle
+
+            if (index < this->particles.size()) {
+                Particle& particle = this->particles[index];
+                particle.updatePosition(1, 1280, 720, this->walls);
             }
-            task();
         }
             });
 }
@@ -183,8 +187,10 @@ class Simulation {
     ThreadPool pool;
 
 public:
-    Simulation(double width, double height, size_t threadCount)
-        : width(width), height(height), pool(threadCount) {}
+    Simulation(double width, double height, size_t numParticles, size_t numWalls, size_t numThreads);
+    ~Simulation();
+
+    void startSimulation(double duration, double deltaTime);
 
     void addParticle(const Particle& particle) {
         particles.push_back(particle);
@@ -216,6 +222,23 @@ public:
             });
         }
 
+    }
+    Simulation::~Simulation() {
+        // ... cleanup if needed
+    }
+
+    void Simulation::startSimulation(double duration, double deltaTime) {
+        // ... existing simulation logic
+
+        threadPool.stop = true;
+        threadPool.condition.notify_all();
+
+        // Wait for all threads to finish
+        for (auto& worker : threadPool.workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
     }
 };
 
