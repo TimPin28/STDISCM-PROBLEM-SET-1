@@ -9,6 +9,7 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+#include <future>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -83,7 +84,7 @@ public:
 
         }
     }
-    
+
     float Min(float a, float b) {
         return (a < b) ? a : b;
     }
@@ -95,7 +96,7 @@ public:
     float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
         return a.x * b.x + a.y * b.y;
     }
-    
+
     bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
 
         sf::Vector2f wallVector = wall.end - wall.start;
@@ -112,6 +113,10 @@ public:
         return distance <= particle.radius;
     }
 };
+
+std::atomic<int> nextParticleIndex(0); // Tracks the next particle index to be updated
+std::vector<Particle> particles; // Your particle vector
+std::mutex indexMutex; // Protects access to nextParticleIndex
 
 class ThreadPool {
 public:
@@ -175,59 +180,44 @@ ThreadPool::~ThreadPool() {
         worker.join();
 }
 
-class Simulation {
-    std::vector<Particle> particles;
-    std::vector<Wall> walls;
-    double width, height; // Simulation area dimensions
+void updateParticlesTask(double deltaTime, std::vector<Wall> walls) {
 
-    ThreadPool pool;
+    while (true) {
+        int index = -1;
 
-public:
-    Simulation(double width, double height, size_t threadCount)
-        : width(width), height(height), pool(threadCount) {}
-
-    void addParticle(const Particle& particle) {
-        particles.push_back(particle);
-    }
-
-    void addWall(const Wall& wall) {
-        walls.push_back(wall);
-    }
-
-    const std::vector<Particle>& getParticles() const {
-        return particles;
-    }
-
-    const std::vector<Wall>& getWalls() const {
-        return walls;
-    }
-
-    void simulate(double deltaTime) {
-
-        // Update position of each particle in parallel
-        for (auto& particle : particles) {
-
-            // Single Threaded Version
-            /*particle.updatePosition(deltaTime, width, height, walls);*/
-
-            // Multi-threaded Version
-            pool.enqueue([&particle, deltaTime, this] {
-                particle.updatePosition(deltaTime, this->width, this->height, this->walls);
-            });
+        {
+            std::lock_guard<std::mutex> guard(indexMutex);
+            if (nextParticleIndex < particles.size()) {
+                index = nextParticleIndex++;
+            }
+            else {
+                break; // No more particles to update
+            }
         }
 
+        if (index != -1) {
+            // Update the particle at index
+            particles[index].updatePosition(deltaTime, 1280, 720, walls); // Provide necessary arguments
+        }
     }
-};
+}
+
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
 
+    ThreadPool pool(std::thread::hardware_concurrency()); // Use the number of concurrent threads supported by the hardware
+
     size_t threadCount = std::thread::hardware_concurrency(); // Use the number of concurrent threads supported by the hardware
-    Simulation sim(1280, 720, threadCount);
+
+    // std::vector<Particle> particles;
+    std::vector<Wall> walls;
+
+    double deltaTime = 1; // Time step for updating particle positions
 
     // Set the frame rate limit
     window.setFramerateLimit(60);
-    
+
     sf::Clock clock; // Starts the clock for FPS calculation  
     sf::Clock fpsUpdateClock; // Clock to update the FPS counter every 0.5 seconds
 
@@ -462,7 +452,7 @@ int main() {
             wallY2EditBox->setVisible(true);
             addWallButton->setVisible(true);
         }
-     });
+        });
 
     // Attach an event handler to the "Add Particle" button for Form 1
     addButton1->onPress([&]() {
@@ -490,7 +480,7 @@ int main() {
                 float yPos = y1 + i * yStep; // Calculate the y position for each particle
 
                 // Add each particle to the simulation
-                sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
+                particles.push_back(Particle(xPos, yPos, angle, velocity, 10));// radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -536,7 +526,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -545,11 +535,11 @@ int main() {
             endAngleEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
-            std::cerr << "Invalid input: " << e.what() << '\n';        
+            std::cerr << "Invalid input: " << e.what() << '\n';
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            
+
         }
         });
 
@@ -571,9 +561,9 @@ int main() {
             for (int i = 0; i < n; ++i) {
                 float velocity = startVelocity + i * velocityStep; // Calculate the velocity for each particle
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
-            
+
                 // Add each particle to the simulation
-                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -601,23 +591,23 @@ int main() {
             if (yPos < 0 || yPos > 720) throw std::invalid_argument("Y coordinate must be between 0 and 720.");
             if (angle < 0 || angle > 360) throw std::invalid_argument("Angle must be between 0 and 360.");
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
-            
-             // Add particle to the simulation
-             sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
-            
-             // Clear the edit boxes after adding particles
-             basicX1PosEditBox->setText("");
-             basicY1PosEditBox->setText("");
-             basicAngleEditBox->setText("");
-             basicVelocityEditBox->setText("");
+
+            // Add particle to the simulation
+            particles.push_back(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
+
+            // Clear the edit boxes after adding particles
+            basicX1PosEditBox->setText("");
+            basicY1PosEditBox->setText("");
+            basicAngleEditBox->setText("");
+            basicVelocityEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
-            
+
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            
+
         }
         });
 
@@ -640,7 +630,7 @@ int main() {
                 throw std::invalid_argument("Wall start and end points cannot be the same.");
             }
 
-            sim.addWall(Wall(x1, y1, x2, y2));
+            walls.push_back(Wall(x1, y1, x2, y2));
 
             // Reset the wall input fields
             wallX1EditBox->setText("");
@@ -663,14 +653,16 @@ int main() {
 
     while (window.isOpen()) {
 
+        nextParticleIndex.store(0);
+
         //compute framerate
         float currentTime = clock.restart().asSeconds();
-        float fps = 1.0f/ (currentTime);
+        float fps = 1.0f / (currentTime);
 
         if (fpsUpdateClock.getElapsedTime().asSeconds() >= 0.5f) {
             std::stringstream ss;
             ss.precision(0); // Set precision to zero
-            ss << "FPS: " << std::fixed << fps; 
+            ss << "FPS: " << std::fixed << fps;
             fpsText.setString(ss.str());
             fpsUpdateClock.restart(); // Reset the fpsUpdateClock for the next 0.5-second interval
         }
@@ -683,18 +675,24 @@ int main() {
                 window.close();
         }
 
-        sim.simulate(1); // Advance the simulation
-     
+        // Enqueue update tasks. The number of tasks typically matches the number of threads.
+        for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
+            pool.enqueue([deltaTime, &walls]() {
+                updateParticlesTask(deltaTime, walls);
+                });
+        }
+
+
         window.clear();
         //Draw particles
-        for (const auto& particle : sim.getParticles()) {
+        for (const auto& particle : particles) {
             sf::CircleShape shape(particle.radius);
             shape.setFillColor(sf::Color::Green);
             shape.setPosition(static_cast<float>(particle.x - particle.radius), static_cast<float>(particle.y - particle.radius));
             window.draw(shape);
         }
         // Draw walls
-        for (const auto& wall : sim.getWalls()) {
+        for (const auto& wall : walls) {
             sf::VertexArray line(sf::Lines, 2);
             line[0].position = sf::Vector2f(wall.start.x, wall.start.y);
             line[0].color = sf::Color::White;
@@ -706,8 +704,21 @@ int main() {
         window.draw(fpsText); // Draw the FPS counter on the window
         gui.draw(); // Draw the GUI
         window.display();
-        
+
     }
 
     return 0;
 }
+
+
+
+/*
+* Using particle vector
+* have a global variable to track the index
+* use a mutex
+* get particle from the vector
+* increment the global variable
+* unlock the mutex
+* update the particle
+* after completing all particles, reset global variable
+*/
