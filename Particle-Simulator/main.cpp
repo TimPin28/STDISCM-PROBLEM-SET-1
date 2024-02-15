@@ -187,10 +187,8 @@ class Simulation {
     ThreadPool pool;
 
 public:
-    Simulation(double width, double height, size_t numParticles, size_t numWalls, size_t numThreads);
-    ~Simulation();
-
-    void startSimulation(double duration, double deltaTime);
+    Simulation(double width, double height, size_t threadCount)
+        : width(width), height(height), pool(threadCount) {}
 
     void addParticle(const Particle& particle) {
         particles.push_back(particle);
@@ -219,26 +217,9 @@ public:
             // Multi-threaded Version
             pool.enqueue([&particle, deltaTime, this] {
                 particle.updatePosition(deltaTime, this->width, this->height, this->walls);
-            });
+                });
         }
 
-    }
-    Simulation::~Simulation() {
-        // ... cleanup if needed
-    }
-
-    void Simulation::startSimulation(double duration, double deltaTime) {
-        // ... existing simulation logic
-
-        threadPool.stop = true;
-        threadPool.condition.notify_all();
-
-        // Wait for all threads to finish
-        for (auto& worker : threadPool.workers) {
-            if (worker.joinable()) {
-                worker.join();
-            }
-        }
     }
 };
 
