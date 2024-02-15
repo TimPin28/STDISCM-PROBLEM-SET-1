@@ -222,7 +222,8 @@ public:
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
 
-    ThreadPool pool(std::thread::hardware_concurrency()); // Use the number of concurrent threads supported by the hardware
+    size_t threadCount = std::thread::hardware_concurrency(); // Use the number of concurrent threads supported by the hardware
+    Simulation sim(1280, 720, threadCount);
 
     // Set the frame rate limit
     window.setFramerateLimit(60);
@@ -397,10 +398,6 @@ int main() {
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
 
-    size_t threadCount = std::thread::hardware_concurrency(); // Use the number of concurrent threads supported by the hardware
-
-    Simulation sim(1280, 720, threadCount);
-
     //Checkbox event handler
     toggleCheckbox->onChange([&](bool checked) {
         if (checked) {
@@ -466,7 +463,6 @@ int main() {
             addWallButton->setVisible(true);
         }
      });
-    //sim.addParticle(Particle(640, 360, 45, 100, 10)); // Add a particle at the center of the window
 
     // Attach an event handler to the "Add Particle" button for Form 1
     addButton1->onPress([&]() {
@@ -666,6 +662,7 @@ int main() {
 
 
     while (window.isOpen()) {
+
         //compute framerate
         float currentTime = clock.restart().asSeconds();
         float fps = 1.0f/ (currentTime);
