@@ -480,7 +480,7 @@ int main() {
                 float yPos = y1 + i * yStep; // Calculate the y position for each particle
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(xPos, yPos, angle, velocity, 10));// radius is 10
+                particles.push_back(Particle(xPos, yPos, angle, velocity, 5));// radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -526,7 +526,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -563,7 +563,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -593,7 +593,7 @@ int main() {
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
 
             // Add particle to the simulation
-            particles.push_back(Particle(xPos, yPos, angle, velocity, 10)); // radius is 10
+            particles.push_back(Particle(xPos, yPos, angle, velocity, 5)); // radius is 10
 
             // Clear the edit boxes after adding particles
             basicX1PosEditBox->setText("");
@@ -675,7 +675,7 @@ int main() {
                 window.close();
         }
 
-        // Enqueue update tasks. The number of tasks typically matches the number of threads.
+        // Enqueue update tasks. 
         for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
             pool.enqueue([deltaTime, &walls]() {
                 updateParticlesTask(deltaTime, walls);
