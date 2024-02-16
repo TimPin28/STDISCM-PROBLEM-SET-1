@@ -27,18 +27,18 @@ To compile and run the Particle Simulator, follow these steps:
 After launching the Particle Simulator, you will be presented with a graphical interface that allows you to interact with the simulation:
 
 
-# Adding Particles
+### Adding Particles
 - Individual Particle Addition: Use the input fields to specify properties for individual particles (position, velocity, angle) and click "Add Particle".
 - Batch Particle Addition: The application supports adding particles in batches through several forms:
   - Form 1: Specify a start and end position, and the application will distribute particles evenly along the line connecting these points.
   - Form 2: Define an angle range and the application will distribute particles evenly across the specified angular direction from a central point.
   - Form 3: Input a range of velocities, and particles will be added with velocities distributed within this range.
 
-# Defining Walls
+### Defining Walls
 - Wall Input Form: Use the wall input form to specify the start and end points of a wall. Walls are added to the simulation space upon clicking "Add Wall" and affect particle trajectories through collisions.
 
 
-# Simulation Control
+### Simulation Control
 - Particles move automatically and interact with walls and boundaries. You can dynamically add particles and walls during the simulation.
 
 ## Authors
