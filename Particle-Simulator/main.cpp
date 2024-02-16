@@ -15,6 +15,13 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+std::atomic<int> nextParticleIndex(0); // Global counter for the next particle to update
+std::condition_variable cv;
+std::mutex cv_m;
+bool ready = false; // Flag to signal threads to start processing
+bool done = false;  // Flag to indicate processing is done for the current frame
+
+
 class Wall {
 public:
     sf::Vector2f start, end;
@@ -25,117 +32,110 @@ public:
 class Particle {
 public:
     double x, y; // Position
-    double vx, vy; // Velocity components calculated from angle and velocity
+    double vx, vy; // Velocity
     double radius;
-
-    // Constructor 
 
     Particle(double x, double y, double angle, double velocity, double radius)
         : x(x), y(y), radius(radius) {
-
-        // Calculate velocity components based on angle and velocity
-        double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
-
-        vx = velocity * cos(angleRad);
-        vy = -velocity * sin(angleRad); // Negative since SFML's y-axis increases downwards
+        // Convert angle to radians and calculate velocity components
+        double rad = angle * (M_PI / 180.0);
+        vx = velocity * cos(rad);
+        vy = velocity * sin(rad);
     }
 
     void updatePosition(double deltaTime, double simWidth, double simHeight, const std::vector<Wall>& walls) {
-        // Calculate the final position of the particle at the end of the timestep
-        float finalX = x + vx * deltaTime;
-        float finalY = y + vy * deltaTime;
+        double nextX = x + vx * deltaTime;
+        double nextY = y + vy * deltaTime;
 
-        // Check for collisions with the simulation boundaries
-        if (finalX - radius < 0 || finalX + radius > simWidth) {
-            vx = -vx;
-        }
+        // Boundary collision
+        if (nextX - radius < 0 || nextX + radius > simWidth) vx = -vx;
+        if (nextY - radius < 0 || nextY + radius > simHeight) vy = -vy;
 
-        if (finalY - radius < 0 || finalY + radius > simHeight) {
-            vy = -vy;
-        }
+        // Wall collision with direct calculation
+        for (const auto& wall : walls) {
+            sf::Vector2f collisionPoint;
+            if (directCollisionDetection(*this, wall, collisionPoint)) {
+                // Calculate wall's normal vector
+                sf::Vector2f wallDirection = wall.end - wall.start;
+                sf::Vector2f wallNormal = { -wallDirection.y, wallDirection.x };
 
-        // Check for collisions with walls using linear interpolation
-        for (auto& wall : walls) {
-            sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
-            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall
+                // Normalize the wall normal
+                float length = sqrt(wallNormal.x * wallNormal.x + wallNormal.y * wallNormal.y);
+                wallNormal.x /= length;
+                wallNormal.y /= length;
 
-            if (linearInterpolationCollision(*this, { finalX, finalY }, wall)) {
-                // Handle collision response
-                // Reflect velocity or apply other collision response as needed
-                // Step 1: Calculate the original speed
-                float originalSpeed = std::sqrt(vx * vx + vy * vy);
+                // Reflect the velocity based on the wall's normal vector
+                reflectVelocity(wall);
 
-                // Step 2: Reflect velocity
-                float dotProduct = vx * N.x + vy * N.y;
-                vx -= 2 * dotProduct * N.x;
-                vy -= 2 * dotProduct * N.y;
-
-                // Step 3: Normalize the reflected velocity vector
-                float reflectedSpeed = std::sqrt(vx * vx + vy * vy);
-                vx = (vx / reflectedSpeed) * originalSpeed;
-                vy = (vy / reflectedSpeed) * originalSpeed;
+                // Adjust the position to the collision point to prevent the particle from "sinking" into the wall
+                x = collisionPoint.x;
+                y = collisionPoint.y;
+                break;
             }
         }
 
-        // Update the position based on the original velocity for the timestep
+        // Update position
         x += vx * deltaTime;
         y += vy * deltaTime;
     }
 
-    bool linearInterpolationCollision(const Particle& particle, const sf::Vector2f& finalPos, const Wall& wall) {
-        // Linear interpolation collision detection
+    bool directCollisionDetection(const Particle& particle, const Wall& wall, sf::Vector2f& collisionPoint) {
+        // Get start and end points of the wall
+        sf::Vector2f wallStart = wall.start;
+        sf::Vector2f wallEnd = wall.end;
+
+        // Particle's position and velocity vector
         sf::Vector2f particlePos(particle.x, particle.y);
+        sf::Vector2f particleVelocity(particle.vx, particle.vy);
 
-        // Check for a collision using linear interpolation
-        float t = 0.0;
-        while (t <= 1.0) {
-            sf::Vector2f interpPos = particlePos + t * (finalPos - particlePos);
+        // Calculate vectors
+        sf::Vector2f wallVector = wallEnd - wallStart;
+        sf::Vector2f particleVector = particleVelocity;
 
-            // Check if the interpolated position collides with the wall
-            if (collisionDetected(particle, interpPos, wall)) {
-                return true;
-            }
+        // Calculate determinants
+        float det = (-wallVector.x * particleVector.y + particleVector.x * wallVector.y);
+        if (std::abs(det) < 1e-9) {
+            return false; // Parallel movement, no collision
+        }
 
-            t += 0.1;  // Adjust the step size as needed
+        // Calculate relative position using Cramer's rule
+        sf::Vector2f relativePos = particlePos - wallStart;
+        float t = (-particleVector.y * relativePos.x + particleVector.x * relativePos.y) / det;
+        float u = (wallVector.x * relativePos.y - wallVector.y * relativePos.x) / det;
+
+        // Check if intersection point is within the segment and particle's path
+        if (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f) {
+            collisionPoint.x = wallStart.x + t * wallVector.x;
+            collisionPoint.y = wallStart.y + t * wallVector.y;
+            return true;
         }
 
         return false;
     }
 
-    float Min(float a, float b) {
-        return (a < b) ? a : b;
-    }
+    void reflectVelocity(const Wall& wall) {
+        sf::Vector2f D = wall.end - wall.start;
+        sf::Vector2f N(-D.y, D.x); // Normal vector
 
-    float Max(float a, float b) {
-        return (a > b) ? a : b;
-    }
+        // Normalize N
+        float length = std::sqrt(N.x * N.x + N.y * N.y);
+        N.x /= length;
+        N.y /= length;
 
-    float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
-        return a.x * b.x + a.y * b.y;
-    }
+        // Dot product of velocity and normal
+        float dotProduct = vx * N.x + vy * N.y;
 
-    bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
+        // Reflect velocity
+        vx -= 2 * dotProduct * N.x;
+        vy -= 2 * dotProduct * N.y;
 
-        sf::Vector2f wallVector = wall.end - wall.start;
-        sf::Vector2f particlePosition(nextPos.x, nextPos.y);
-        sf::Vector2f wallStartToPoint = particlePosition - wall.start;
-
-        float wallLengthSquared = dot(wallVector, wallVector);
-        float t = Max(0.f, Min(1.f, dot(wallStartToPoint, wallVector) / wallLengthSquared));
-        sf::Vector2f projection = wall.start + t * wallVector;
-
-        sf::Vector2f distVector = particlePosition - projection;
-        float distance = sqrt(distVector.x * distVector.x + distVector.y * distVector.y);
-
-        return distance <= particle.radius;
+        // Maintain same speed
+        float speed = std::sqrt(vx * vx + vy * vy);
+        float originalSpeed = std::sqrt(vx * vx + vy * vy);
+        vx = (vx / speed) * originalSpeed;
+        vy = (vy / speed) * originalSpeed;
     }
 };
-
-std::atomic<int> nextParticleIndex(0); // Global counter for the next particle to update
-std::condition_variable cv;
-std::mutex cv_m;
-bool ready = false; // Flag to signal threads to start processing
-bool done = false;  // Flag to indicate processing is done for the current frame
 
 void updateParticleWorker(std::vector<Particle>& particles, const std::vector<Wall>& walls, double deltaTime, double simWidth, double simHeight) {
     while (!done) {
@@ -436,7 +436,7 @@ int main() {
                 float yPos = y1 + i * yStep; // Calculate the y position for each particle
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(xPos, yPos, angle, velocity, 8));// radius is 8
+                particles.push_back(Particle(xPos, yPos, angle, velocity, 5));// radius is 5
             }
 
             // Clear the edit boxes after adding particles
@@ -482,7 +482,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 8)); // radius is 8
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 5
             }
 
             // Clear the edit boxes after adding particles
@@ -519,7 +519,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 8)); // radius is 8
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 5
             }
 
             // Clear the edit boxes after adding particles
@@ -549,7 +549,7 @@ int main() {
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
 
             // Add particle to the simulation
-            particles.push_back(Particle(xPos, yPos, angle, velocity, 8)); // radius is 8
+            particles.push_back(Particle(xPos, yPos, angle, velocity, 5)); // radius is 5
 
             // Clear the edit boxes after adding particles
             basicX1PosEditBox->setText("");
@@ -637,15 +637,6 @@ int main() {
 
         startFrame(); // Signal threads to start processing
         ready = false; // Threads are now processing
-
-
-        //for (auto& particle : particles) {
-
-        //    // Single Threaded Version
-        //    particle.updatePosition(deltaTime, 1280, 720, walls);
-
-        //}
-
 
         window.clear();
         //Draw particles
