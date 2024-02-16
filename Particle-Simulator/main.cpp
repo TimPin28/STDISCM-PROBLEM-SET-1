@@ -113,94 +113,125 @@ public:
         return distance <= particle.radius;
     }
 };
-
-std::atomic<int> nextParticleIndex(0); // Tracks the next particle index to be updated
-std::vector<Particle> particles; // Your particle vector
-std::mutex indexMutex; // Protects access to nextParticleIndex
-
 class ThreadPool {
 public:
-    ThreadPool(size_t threads);
-    template<class F, class... Args>
-    void enqueue(F&& f, Args&&... args);
-    ~ThreadPool();
+    ThreadPool(size_t numThreads) : stop(false) {
+        for (size_t i = 0; i < numThreads; ++i) {
+            workers.emplace_back([this] {
+                while (true) {
+                    size_t index;
+
+                    {
+                        std::unique_lock<std::mutex> lock(vectorMutex);
+
+                        // Wait for new items or exit if stop signal is received
+                        condition.wait(lock, [this] { return stop || currentIndex < particles.size(); });
+
+                        if (stop && currentIndex >= particles.size()) {
+                            return;
+                        }
+
+                        index = currentIndex;
+                        ++currentIndex;
+                    }
+
+                    // Perform operation on the shared vector element
+                    processItem(index);
+                }
+                });
+        }
+    }
+
+    void wait() {
+        for (std::thread& worker : workers) {
+            worker.join();
+        }
+    }
+
+    ~ThreadPool() {
+        {
+            std::unique_lock<std::mutex> lock(vectorMutex);
+            stop = true;
+        }
+        condition.notify_all();
+    }
 
 private:
     std::vector<std::thread> workers;
-    std::queue<std::function<void()>> tasks;
-
-    std::mutex queue_mutex;
+    std::vector<Particle> particles;  // Vector to be accessed by the thread pool
+    std::vector<Wall> walls;
+    std::mutex vectorMutex;
     std::condition_variable condition;
+    size_t currentIndex{ 0 };  // Index of the next element to be processed
     bool stop;
+
+    // Function to perform an operation on an element of the vector
+    void processItem(size_t index) {
+        // Access the shared vector and perform the operation
+        std::lock_guard<std::mutex> lock(vectorMutex);
+        if (index < particles.size()) {
+			Particle& particle = particles[index];
+			// Perform your operation on 'particle'
+			particle.updatePosition(1, 1280, 720, walls); // Provide necessary arguments
+		}       
+    }
+
+public:
+    // Function to add items to the vector
+    void addParticle(Particle particle) {
+        {
+            std::lock_guard<std::mutex> lock(vectorMutex);
+            particles.push_back(particle);
+        }
+        condition.notify_one();  // Notify a waiting thread that a new item is available
+    }
+
+    void addWall(Wall wall) {
+        {
+			std::lock_guard<std::mutex> lock(vectorMutex);
+			walls.push_back(wall);
+		}		
+	}
+
+    //getter that returns the particles vector
+    std::vector<Particle> getParticles() {
+		std::lock_guard<std::mutex> lock(vectorMutex);
+		return particles;
+	}
+    
+    //getter that returns the walls vector
+    std::vector<Wall> getWalls() {
+        return walls;
+    }
+
+    // Function to reset the index, allowing reuse of existing elements
+    void resetIndex() {
+        std::lock_guard<std::mutex> lock(vectorMutex);
+        currentIndex = 0;
+    }
 };
 
-// Constructor
-ThreadPool::ThreadPool(size_t threads) : stop(false) {
-    for (size_t i = 0; i < threads; ++i)
-        workers.emplace_back([this] {
-        for (;;) {
-            std::function<void()> task;
-            {
-                std::unique_lock<std::mutex> lock(this->queue_mutex);
-                this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
-                if (this->stop && this->tasks.empty())
-                    return;
-                task = std::move(this->tasks.front());
-                this->tasks.pop();
-            }
-            task();
-        }
-            });
-}
-
-// Add new work item to the pool
-template<class F, class... Args>
-void ThreadPool::enqueue(F&& f, Args&&... args) {
-    auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-
-        // don't allow enqueueing after stopping the pool
-        if (stop)
-            throw std::runtime_error("enqueue on stopped ThreadPool");
-
-        tasks.emplace(task);
-    }
-    condition.notify_one();
-}
-
-// Destructor joins all threads
-ThreadPool::~ThreadPool() {
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        stop = true;
-    }
-    condition.notify_all();
-    for (std::thread& worker : workers)
-        worker.join();
-}
-
-void updateParticlesTask(double deltaTime, std::vector<Wall> walls) {
-
-    while (true) {
-        int index = -1;
-
-        {
-            std::lock_guard<std::mutex> guard(indexMutex);
-            if (nextParticleIndex < particles.size()) {
-                index = nextParticleIndex++;
-            }
-            else {
-                break; // No more particles to update
-            }
-        }
-
-        if (index != -1) {
-            // Update the particle at index
-            particles[index].updatePosition(deltaTime, 1280, 720, walls); // Provide necessary arguments
-        }
-    }
-}
+//void updateParticlesTask(double deltaTime, std::vector<Wall> walls) {
+//
+//    while (true) {
+//        int index = -1;
+//
+//        {
+//            std::lock_guard<std::mutex> guard(indexMutex);
+//            if (nextParticleIndex < particles.size()) {
+//                index = nextParticleIndex++;
+//            }
+//            else {
+//                break; // No more particles to update
+//            }
+//        }
+//
+//        if (index != -1) {
+//            // Update the particle at index
+//            particles[index].updatePosition(deltaTime, 1280, 720, walls); // Provide necessary arguments
+//        }
+//    }
+//}
 
 
 int main() {
@@ -480,7 +511,8 @@ int main() {
                 float yPos = y1 + i * yStep; // Calculate the y position for each particle
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(xPos, yPos, angle, velocity, 5));// radius is 10
+                pool.addParticle(Particle(xPos, yPos, angle, velocity, 5));// radius is 5
+                //particles.push_back(Particle(xPos, yPos, angle, velocity, 5));// radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -526,7 +558,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 10
+                pool.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 5
             }
 
             // Clear the edit boxes after adding particles
@@ -563,7 +595,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 10
+                pool.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 5
             }
 
             // Clear the edit boxes after adding particles
@@ -593,7 +625,7 @@ int main() {
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
 
             // Add particle to the simulation
-            particles.push_back(Particle(xPos, yPos, angle, velocity, 5)); // radius is 10
+            pool.addParticle(Particle(xPos, yPos, angle, velocity, 5)); // radius is 5
 
             // Clear the edit boxes after adding particles
             basicX1PosEditBox->setText("");
@@ -630,7 +662,8 @@ int main() {
                 throw std::invalid_argument("Wall start and end points cannot be the same.");
             }
 
-            walls.push_back(Wall(x1, y1, x2, y2));
+            //walls.push_back(Wall(x1, y1, x2, y2));
+            pool.addWall(Wall(x1, y1, x2, y2));
 
             // Reset the wall input fields
             wallX1EditBox->setText("");
@@ -653,8 +686,6 @@ int main() {
 
     while (window.isOpen()) {
 
-        nextParticleIndex.store(0);
-
         //compute framerate
         float currentTime = clock.restart().asSeconds();
         float fps = 1.0f / (currentTime);
@@ -675,24 +706,19 @@ int main() {
                 window.close();
         }
 
-        // Enqueue update tasks. 
-        for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
-            pool.enqueue([deltaTime, &walls]() {
-                updateParticlesTask(deltaTime, walls);
-                });
-        }
-
+        pool.resetIndex();
+        pool.wait();
 
         window.clear();
         //Draw particles
-        for (const auto& particle : particles) {
+        for (const auto& particle : pool.getParticles()) {
             sf::CircleShape shape(particle.radius);
             shape.setFillColor(sf::Color::Green);
             shape.setPosition(static_cast<float>(particle.x - particle.radius), static_cast<float>(particle.y - particle.radius));
             window.draw(shape);
         }
         // Draw walls
-        for (const auto& wall : walls) {
+        for (const auto& wall : pool.getWalls()) {
             sf::VertexArray line(sf::Lines, 2);
             line[0].position = sf::Vector2f(wall.start.x, wall.start.y);
             line[0].color = sf::Color::White;
@@ -709,16 +735,3 @@ int main() {
 
     return 0;
 }
-
-
-
-/*
-* Using particle vector
-* have a global variable to track the index
-* use a mutex
-* get particle from the vector
-* increment the global variable
-* unlock the mutex
-* update the particle
-* after completing all particles, reset global variable
-*/
