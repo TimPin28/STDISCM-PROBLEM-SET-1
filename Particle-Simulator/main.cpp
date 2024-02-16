@@ -41,33 +41,27 @@ public:
     }
 
     void updatePosition(double deltaTime, double simWidth, double simHeight, const std::vector<Wall>& walls) {
-        x += vx * deltaTime;
-        y += vy * deltaTime;
+        // Calculate the final position of the particle at the end of the timestep
+        float finalX = x + vx * deltaTime;
+        float finalY = y + vy * deltaTime;
 
         // Check for collisions with the simulation boundaries
-        if (x - radius < 0 || x + radius > simWidth) { // Left or right wall collision
-            vx = -vx; // Invert velocity in x-direction
-            x = (x - radius < 0) ? radius : simWidth - radius; // Correct position to stay within bounds
-        }
-        if (y - radius < 0 || y + radius > simHeight) { // Top or bottom wall collision
-            vy = -vy; // Invert velocity in y-direction
-            y = (y - radius < 0) ? radius : simHeight - radius; // Correct position to stay within bounds
+        if (finalX - radius < 0 || finalX + radius > simWidth) {
+            vx = -vx;
         }
 
+        if (finalY - radius < 0 || finalY + radius > simHeight) {
+            vy = -vy;
+        }
+
+        // Check for collisions with walls using linear interpolation
         for (auto& wall : walls) {
             sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
             sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall
 
-            // Normalize N
-            float length = std::sqrt(N.x * N.x + N.y * N.y);
-            N.x /= length;
-            N.y /= length;
-
-            // Predict next position of the particle
-            sf::Vector2f nextPos(x + vx, y + vy);
-
-            // If a collision is detected:
-            if (collisionDetected(*this, nextPos, wall)) {
+            if (linearInterpolationCollision(*this, { finalX, finalY }, wall)) {
+                // Handle collision response
+                // Reflect velocity or apply other collision response as needed
                 // Step 1: Calculate the original speed
                 float originalSpeed = std::sqrt(vx * vx + vy * vy);
 
@@ -81,8 +75,31 @@ public:
                 vx = (vx / reflectedSpeed) * originalSpeed;
                 vy = (vy / reflectedSpeed) * originalSpeed;
             }
-
         }
+
+        // Update the position based on the original velocity for the timestep
+        x += vx * deltaTime;
+        y += vy * deltaTime;
+    }
+
+    bool linearInterpolationCollision(const Particle& particle, const sf::Vector2f& finalPos, const Wall& wall) {
+        // Linear interpolation collision detection
+        sf::Vector2f particlePos(particle.x, particle.y);
+
+        // Check for a collision using linear interpolation
+        float t = 0.0;
+        while (t <= 1.0) {
+            sf::Vector2f interpPos = particlePos + t * (finalPos - particlePos);
+
+            // Check if the interpolated position collides with the wall
+            if (collisionDetected(particle, interpPos, wall)) {
+                return true;
+            }
+
+            t += 0.1;  // Adjust the step size as needed
+        }
+
+        return false;
     }
 
     float Min(float a, float b) {
