@@ -15,6 +15,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+std::atomic<int> nextParticleIndex(0); // Atomic counter for the next particle to update
+
+
 class Wall {
 public:
     sf::Vector2f start, end;
@@ -114,10 +117,16 @@ public:
     }
 };
 
-// Worker function for updating a range of particles
-void updateParticles(std::vector<Particle>& particles, const std::vector<Wall>& walls, double deltaTime, double simWidth, double simHeight, int startIdx, int endIdx) {
-    for (int i = startIdx; i <= endIdx; ++i) {
-        particles[i].updatePosition(deltaTime, simWidth, simHeight, walls);
+// Worker function for updating particles
+void updateParticleWorker(std::vector<Particle>& particles, const std::vector<Wall>& walls, double deltaTime, double simWidth, double simHeight) {
+    while (true) {
+        int index = nextParticleIndex.fetch_add(1); // Atomically claim a particle to update
+
+        if (index >= particles.size()) {
+            break; // All particles have been claimed
+        }
+
+        particles[index].updatePosition(deltaTime, simWidth, simHeight, walls);
     }
 }
 
@@ -571,6 +580,8 @@ int main() {
 
     while (window.isOpen()) {
 
+        nextParticleIndex.store(0); // Reset the counter for the next frame
+
         //compute framerate
         float currentTime = clock.restart().asSeconds();
         float fps = 1.0f / (currentTime);
@@ -591,30 +602,17 @@ int main() {
                 window.close();
         }
 
-        int particlesPerThread = particles.size() / threadCount;
-        int extraParticles = particles.size() % threadCount;
-
-        // Clear previously used threads
-        threads.clear();
-
-        int startIdx = 0;
+        // Launch threads
         for (size_t i = 0; i < threadCount; ++i) {
-            int endIdx = startIdx + particlesPerThread - 1;
-            if (extraParticles > 0) {
-                endIdx += 1;
-                extraParticles -= 1;
-            }
-
-            // Create and launch threads
-            threads.emplace_back(updateParticles, std::ref(particles), std::ref(walls), deltaTime, 1280.0, 720.0, startIdx, endIdx);
-
-            startIdx = endIdx + 1;
+            threads.emplace_back(updateParticleWorker, std::ref(particles), std::ref(walls), deltaTime, 1280.0, 720.0);
         }
 
         // Wait for all threads to complete
         for (auto& thread : threads) {
             thread.join();
         }
+        threads.clear(); // Clear the thread objects for the next iteration
+
 
         //for (auto& particle : particles) {
 
