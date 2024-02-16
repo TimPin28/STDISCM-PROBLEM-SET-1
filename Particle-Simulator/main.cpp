@@ -519,8 +519,8 @@ int main() {
             if (startVelocity <= 0) throw std::invalid_argument("Start Velocity must be greater than 0.");
             if (endVelocity <= 0) throw std::invalid_argument("End Velocity must be greater than 0.");
             if (startVelocity >= endVelocity) throw std::invalid_argument("Start Velocity must be less than End Velocity.");;
-            if (startVelocity > 176) throw std::invalid_argument("Start Velocity must be less than or equal 175.");
-            if (endVelocity > 176) throw std::invalid_argument("End Velocity must be less than or equal 175.");
+            if (startVelocity >= 176) throw std::invalid_argument("Start Velocity must be less than or equal 175.");
+            if (endVelocity >= 176) throw std::invalid_argument("End Velocity must be less than or equal 175.");
             float velocityStep = (endVelocity - startVelocity) / std::max(1, n - 1); // Calculate the velocity step between particles
 
             for (int i = 0; i < n; ++i) {
@@ -556,7 +556,7 @@ int main() {
             if (yPos < 0 || yPos > 720) throw std::invalid_argument("Y coordinate must be between 0 and 720.");
             if (angle < 0 || angle > 360) throw std::invalid_argument("Angle must be between 0 and 360.");
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
-            if (velocity > 176) throw std::invalid_argument("Start Velocity must be less than or equal 175.");
+            if (velocity >= 176) throw std::invalid_argument("Start Velocity must be less than or equal 175.");
 
             // Add particle to the simulation
             particles.push_back(Particle(xPos, yPos, angle, velocity, 5)); // radius is 5
