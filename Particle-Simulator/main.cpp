@@ -39,7 +39,7 @@ public:
         // Convert angle to radians and calculate velocity components
         double rad = angle * (M_PI / 180.0);
         vx = velocity * cos(rad);
-        vy = velocity * sin(rad);
+        vy = -velocity * sin(rad);
     }
 
     void updatePosition(double deltaTime, double simWidth, double simHeight, const std::vector<Wall>& walls) {
