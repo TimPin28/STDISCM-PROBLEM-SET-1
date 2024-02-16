@@ -40,6 +40,8 @@ After launching the Particle Simulator, you will be presented with a graphical i
 
 ### Simulation Control
 - Particles move automatically and interact with walls and boundaries. You can dynamically add particles and walls during the simulation.
+- Use the checkbox found above to hide/show the input fields.
+- An FPS counter is displayed on the upper-left corner of the screen.
 
 ## Authors
 * **Go, Eldrich**
