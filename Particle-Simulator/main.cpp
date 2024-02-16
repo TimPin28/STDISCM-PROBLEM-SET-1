@@ -210,145 +210,145 @@ int main() {
     // Particle Input Form 1
     auto noParticles1 = tgui::EditBox::create();
     noParticles1->setPosition("10%", "5%");
-    noParticles1->setSize("18%", "6%");
+    noParticles1->setSize("18%", "4%");
     noParticles1->setDefaultText("Number of Particles");
     gui.add(noParticles1);
 
     auto X1PosEditBox = tgui::EditBox::create();
-    X1PosEditBox->setPosition("10%", "12%");
-    X1PosEditBox->setSize("18%", "6%");
+    X1PosEditBox->setPosition("10%", "10%");
+    X1PosEditBox->setSize("18%", "4%");
     X1PosEditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(X1PosEditBox);
 
     auto Y1PosEditBox = tgui::EditBox::create();
-    Y1PosEditBox->setPosition("10%", "19%");
-    Y1PosEditBox->setSize("18%", "6%");
+    Y1PosEditBox->setPosition("10%", "15%");
+    Y1PosEditBox->setSize("18%", "4%");
     Y1PosEditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(Y1PosEditBox);
 
     auto X2PosEditBox = tgui::EditBox::create();
-    X2PosEditBox->setPosition("10%", "26%");
-    X2PosEditBox->setSize("18%", "6%");
+    X2PosEditBox->setPosition("10%", "20%");
+    X2PosEditBox->setSize("18%", "4%");
     X2PosEditBox->setDefaultText("X2 Coordinate (0-1280)");
     gui.add(X2PosEditBox);
 
     auto Y2PosEditBox = tgui::EditBox::create();
-    Y2PosEditBox->setPosition("10%", "33%");
-    Y2PosEditBox->setSize("18%", "6%");
+    Y2PosEditBox->setPosition("10%", "25%");
+    Y2PosEditBox->setSize("18%", "4%");
     Y2PosEditBox->setDefaultText("Y2 Coordinate (0-720)");
     gui.add(Y2PosEditBox);
 
     auto addButton1 = tgui::Button::create("Add Batch Particle 1");
-    addButton1->setPosition("10%", "40%"); // Adjust the percentage for layout
-    addButton1->setSize("18%", "6%");
+    addButton1->setPosition("10%", "30%"); // Adjust the percentage for layout
+    addButton1->setSize("18%", "4%");
     gui.add(addButton1);
 
     // Particle Input Form 2
     auto noParticles2 = tgui::EditBox::create();
     noParticles2->setPosition("30%", "5%");
-    noParticles2->setSize("18%", "6%");
+    noParticles2->setSize("18%", "4%");
     noParticles2->setDefaultText("Number of Particles");
     gui.add(noParticles2);
 
     auto startAngleEditBox = tgui::EditBox::create();
-    startAngleEditBox->setPosition("30%", "12%");
-    startAngleEditBox->setSize("18%", "6%");
+    startAngleEditBox->setPosition("30%", "10%");
+    startAngleEditBox->setSize("18%", "4%");
     startAngleEditBox->setDefaultText("Start Angle (0-360)");
     gui.add(startAngleEditBox);
 
     auto endAngleEditBox = tgui::EditBox::create();
-    endAngleEditBox->setPosition("30%", "19%");
-    endAngleEditBox->setSize("18%", "6%");
+    endAngleEditBox->setPosition("30%", "15%");
+    endAngleEditBox->setSize("18%", "4%");
     endAngleEditBox->setDefaultText("End Angle (0-360)");
     gui.add(endAngleEditBox);
 
     auto addButton2 = tgui::Button::create("Add Batch Particle 2");
-    addButton2->setPosition("30%", "40%"); // Adjust the percentage for layout
-    addButton2->setSize("18%", "6%");
+    addButton2->setPosition("30%", "20%"); // Adjust the percentage for layout
+    addButton2->setSize("18%", "4%");
     gui.add(addButton2);
 
     // Particle Input Form 3
     auto noParticles3 = tgui::EditBox::create();
     noParticles3->setPosition("50%", "5%");
-    noParticles3->setSize("18%", "6%");
+    noParticles3->setSize("18%", "4%");
     noParticles3->setDefaultText("Number of Particles");
     gui.add(noParticles3);
 
     auto startVelocityEditBox = tgui::EditBox::create();
-    startVelocityEditBox->setPosition("50%", "12%");
-    startVelocityEditBox->setSize("18%", "6%");
-    startVelocityEditBox->setDefaultText("Start Velocity");
+    startVelocityEditBox->setPosition("50%", "10%");
+    startVelocityEditBox->setSize("18%", "4%");
+    startVelocityEditBox->setDefaultText("Start Velocity (1-175)");
     gui.add(startVelocityEditBox);
 
     auto endVelocityEditBox = tgui::EditBox::create();
-    endVelocityEditBox->setPosition("50%", "19%");
-    endVelocityEditBox->setSize("18%", "6%");
-    endVelocityEditBox->setDefaultText("End Velocity");
+    endVelocityEditBox->setPosition("50%", "15%");
+    endVelocityEditBox->setSize("18%", "4%");
+    endVelocityEditBox->setDefaultText("End Velocity (1-175)");
     gui.add(endVelocityEditBox);
 
     auto addButton3 = tgui::Button::create("Add Batch Particle 3");
-    addButton3->setPosition("50%", "40%"); // Adjust the percentage for layout
-    addButton3->setSize("18%", "6%");
+    addButton3->setPosition("50%", "20%"); // Adjust the percentage for layout
+    addButton3->setSize("18%", "4%");
     gui.add(addButton3);
 
     // Basic Particle Input 
     auto basicX1PosEditBox = tgui::EditBox::create();
     basicX1PosEditBox->setPosition("75%", "5%");
-    basicX1PosEditBox->setSize("18%", "6%");
+    basicX1PosEditBox->setSize("18%", "4%");
     basicX1PosEditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(basicX1PosEditBox);
 
     auto basicY1PosEditBox = tgui::EditBox::create();
-    basicY1PosEditBox->setPosition("75%", "12%");
-    basicY1PosEditBox->setSize("18%", "6%");
+    basicY1PosEditBox->setPosition("75%", "10%");
+    basicY1PosEditBox->setSize("18%", "4%");
     basicY1PosEditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(basicY1PosEditBox);
 
     auto basicAngleEditBox = tgui::EditBox::create();
-    basicAngleEditBox->setPosition("75%", "19%");
-    basicAngleEditBox->setSize("18%", "6%");
+    basicAngleEditBox->setPosition("75%", "15%");
+    basicAngleEditBox->setSize("18%", "4%");
     basicAngleEditBox->setDefaultText("Angle Directon (0-360)");
     gui.add(basicAngleEditBox);
 
     auto basicVelocityEditBox = tgui::EditBox::create();
-    basicVelocityEditBox->setPosition("75%", "26%");
-    basicVelocityEditBox->setSize("18%", "6%");
-    basicVelocityEditBox->setDefaultText("Velocity");
+    basicVelocityEditBox->setPosition("75%", "20%");
+    basicVelocityEditBox->setSize("18%", "4%");
+    basicVelocityEditBox->setDefaultText("Velocity (1-175)");
     gui.add(basicVelocityEditBox);
 
     auto basicaddButton = tgui::Button::create("Add Particle");
-    basicaddButton->setPosition("75%", "40%"); // Adjust the percentage for layout
-    basicaddButton->setSize("18%", "6%");
+    basicaddButton->setPosition("75%", "25%"); // Adjust the percentage for layout
+    basicaddButton->setSize("18%", "4%");
     gui.add(basicaddButton);
 
     // Wall Input Form 
     auto wallX1EditBox = tgui::EditBox::create();
-    wallX1EditBox->setPosition("75%", "47%");
-    wallX1EditBox->setSize("18%", "6%");
+    wallX1EditBox->setPosition("75%", "45%");
+    wallX1EditBox->setSize("18%", "4%");
     wallX1EditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(wallX1EditBox);
 
     auto wallY1EditBox = tgui::EditBox::create();
-    wallY1EditBox->setPosition("75%", "54%");
-    wallY1EditBox->setSize("18%", "6%");
+    wallY1EditBox->setPosition("75%", "50%");
+    wallY1EditBox->setSize("18%", "4%");
     wallY1EditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(wallY1EditBox);
 
     auto wallX2EditBox = tgui::EditBox::create();
-    wallX2EditBox->setPosition("75%", "61%");
-    wallX2EditBox->setSize("18%", "6%");
+    wallX2EditBox->setPosition("75%", "55%");
+    wallX2EditBox->setSize("18%", "4%");
     wallX2EditBox->setDefaultText("X2 Coordinate (0-1280)");
     gui.add(wallX2EditBox);
 
     auto wallY2EditBox = tgui::EditBox::create();
-    wallY2EditBox->setPosition("75%", "68%");
-    wallY2EditBox->setSize("18%", "6%");
+    wallY2EditBox->setPosition("75%", "60%");
+    wallY2EditBox->setSize("18%", "4%");
     wallY2EditBox->setDefaultText("Y2 Coordinate (0-720)");
     gui.add(wallY2EditBox);
 
     auto addWallButton = tgui::Button::create("Add Wall");
-    addWallButton->setPosition("75%", "75%"); // Adjust the percentage for layout
-    addWallButton->setSize("18%", "6%");
+    addWallButton->setPosition("75%", "65%"); // Adjust the percentage for layout
+    addWallButton->setSize("18%", "4%");
     gui.add(addWallButton);
 
     //Checkbox event handler
@@ -519,6 +519,8 @@ int main() {
             if (startVelocity <= 0) throw std::invalid_argument("Start Velocity must be greater than 0.");
             if (endVelocity <= 0) throw std::invalid_argument("End Velocity must be greater than 0.");
             if (startVelocity >= endVelocity) throw std::invalid_argument("Start Velocity must be less than End Velocity.");;
+            if (startVelocity > 176) throw std::invalid_argument("Start Velocity must be less than or equal 175.");
+            if (endVelocity > 176) throw std::invalid_argument("End Velocity must be less than or equal 175.");
             float velocityStep = (endVelocity - startVelocity) / std::max(1, n - 1); // Calculate the velocity step between particles
 
             for (int i = 0; i < n; ++i) {
@@ -554,6 +556,7 @@ int main() {
             if (yPos < 0 || yPos > 720) throw std::invalid_argument("Y coordinate must be between 0 and 720.");
             if (angle < 0 || angle > 360) throw std::invalid_argument("Angle must be between 0 and 360.");
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
+            if (velocity > 176) throw std::invalid_argument("Start Velocity must be less than or equal 175.");
 
             // Add particle to the simulation
             particles.push_back(Particle(xPos, yPos, angle, velocity, 5)); // radius is 5
