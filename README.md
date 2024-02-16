@@ -41,7 +41,7 @@ After launching the Particle Simulator, you will be presented with a graphical i
 
 
 # Simulation Control
-- Particles move automatically and interact with walls and boundaries. You can dynamically add or remove particles and walls during the simulation.
+- Particles move automatically and interact with walls and boundaries. You can dynamically add particles and walls during the simulation.
 
 ## Authors
 * **Go, Eldrich**
