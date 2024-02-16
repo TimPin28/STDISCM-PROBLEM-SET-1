@@ -618,21 +618,17 @@ int main() {
                 window.close();
         }
 
-        sim.simulate(1); // Advance the simulation
+        startFrame(); // Signal threads to start processing
+        ready = false; // Threads are now processing
 
-        frames++; // Increment frame count for this second
 
-        // Calculate FPS
-        if (displayClock.getElapsedTime().asSeconds() >= 0.5f) {
-            fps = static_cast<unsigned int>(frames / displayClock.getElapsedTime().asSeconds());
-            frames = 0;
-            displayClock.restart();
+        //for (auto& particle : particles) {
 
-            // Update the FPS text
-            std::stringstream ss;
-            ss << "FPS: " << fps;
-            fpsText.setString(ss.str());
-        }
+        //    // Single Threaded Version
+        //    particle.updatePosition(deltaTime, 1280, 720, walls);
+
+        //}
+
 
         window.clear();
         //Draw particles
