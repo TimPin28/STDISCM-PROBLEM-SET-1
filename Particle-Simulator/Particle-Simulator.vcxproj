@@ -104,12 +104,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);TGUI_STATIC;SFML_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\eldri\Downloads\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\include;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\SFML-2.6.1\include;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\TGUI-1.1\include;C:\Users\eldri\Downloads\TGUI-1.1\include;C:\Users\timot\Documents\STDISCM\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\include;C:\Users\timot\Documents\STDISCM\TGUI-1.1.0-vc17-64bit-for-SFML-2.6.1\TGUI-1.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ExternalLibraries\SFML\include;$(SolutionDir)ExternalLibraries\TGUI\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\eldri\Downloads\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\lib;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\TGUI-1.1\lib;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\SFML-2.6.1\lib;C:\Users\eldri\Downloads\TGUI-1.1.0\lib;C:\Users\timot\Documents\STDISCM\TGUI-1.1.0-vc17-64bit-for-SFML-2.6.1\TGUI-1.1\lib;C:\Users\timot\Documents\STDISCM\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)ExternalLibraries\SFML\lib;$(SolutionDir)ExternalLibraries\TGUI\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-graphics-d.lib;sfml-window-d.lib;sfml-system-d.lib;tgui-s-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -121,14 +121,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);TGUI_STATIC;SFML_STATIC;TGUI_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\eldri\Downloads\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\include;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\SFML-2.6.1\include;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\TGUI-1.1\include;C:\Users\eldri\Downloads\TGUI-1.1\include;C:\Users\timot\Documents\STDISCM\TGUI-1.1.0-vc17-64bit-for-SFML-2.6.1\TGUI-1.1\include;C:\Users\timot\Documents\STDISCM\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ExternalLibraries\SFML\include;$(SolutionDir)ExternalLibraries\TGUI\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\eldri\Downloads\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\lib;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\TGUI-1.1\lib;C:\Users\windows\Documents\Timothy\College\4th Year\2nd Term\STDISCM\SFML-2.6.1\lib;C:\Users\eldri\Downloads\TGUI-1.1\lib;C:\Users\timot\Documents\STDISCM\TGUI-1.1.0-vc17-64bit-for-SFML-2.6.1\TGUI-1.1\lib;C:\Users\timot\Documents\STDISCM\SFML-2.6.1-windows-vc17-64-bit\SFML-2.6.1\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)ExternalLibraries\SFML\lib;$(SolutionDir)ExternalLibraries\TGUI\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;opengl32.lib;freetype.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;tgui-s.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
