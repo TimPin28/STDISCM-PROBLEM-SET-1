@@ -4,16 +4,23 @@
 #include <TGUI/Widget.hpp>
 #include <TGUI/String.hpp>
 #include <iostream>
-#include <cmath>
 #include <stdexcept>
-#include <algorithm>
 #include <sstream>
-#include <vector>
 #include <thread>
+#include <queue>
+#include <mutex>
+#include <future>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+class Wall {
+public:
+    sf::Vector2f start, end;
+
+    Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
+};
 
 class Particle {
 public:
@@ -21,7 +28,7 @@ public:
     double vx, vy; // Velocity components calculated from angle and velocity
     double radius;
 
-    // Constructor now takes angle (in degrees) and velocity, along with position and radius
+    // Constructor 
 
     Particle(double x, double y, double angle, double velocity, double radius)
         : x(x), y(y), radius(radius) {
@@ -33,7 +40,7 @@ public:
         vy = -velocity * sin(angleRad); // Negative since SFML's y-axis increases downwards
     }
 
-    void updatePosition(double deltaTime, double simWidth, double simHeight) {
+    void updatePosition(double deltaTime, double simWidth, double simHeight, const std::vector<Wall>& walls) {
         x += vx * deltaTime;
         y += vy * deltaTime;
 
@@ -46,66 +53,10 @@ public:
             vy = -vy; // Invert velocity in y-direction
             y = (y - radius < 0) ? radius : simHeight - radius; // Correct position to stay within bounds
         }
-    }
-};
 
-class Wall {
-public:
-    sf::Vector2f start, end;
-
-    Wall(float x1, float y1, float x2, float y2) : start(x1, y1), end(x2, y2) {}
-};
-
-float Min(float a, float b) {
-    return (a < b) ? a : b;
-}
-
-float Max(float a, float b) {
-    return (a > b) ? a : b;
-}
-
-// dot function
-float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
-    return a.x * b.x + a.y * b.y;
-}
-
-
-bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
-    // This replaces the existing collision detection between the "if (fabs(det) < 1e-9)" block
-    sf::Vector2f wallVector = wall.end - wall.start;
-    sf::Vector2f particlePosition(nextPos.x, nextPos.y);
-    sf::Vector2f wallStartToPoint = particlePosition - wall.start;
-
-    float wallLengthSquared = dot(wallVector, wallVector);
-    float t = Max(0.f, Min(1.f, dot(wallStartToPoint, wallVector) / wallLengthSquared));
-    sf::Vector2f projection = wall.start + t * wallVector;
-
-    sf::Vector2f distVector = particlePosition - projection;
-    float distance = sqrt(distVector.x * distVector.x + distVector.y * distVector.y);
-
-    return distance <= particle.radius;
-}
-
-class Simulation {
-    std::vector<Particle> particles;
-    std::vector<Wall> walls;
-    double width, height; // Simulation area dimensions
-
-public:
-    Simulation(double width, double height) : width(width), height(height) {}
-
-    void addParticle(const Particle& particle) {
-        particles.push_back(particle);
-    }
-
-    void addWall(const Wall& wall) {
-        walls.push_back(wall);
-    }
-
-    void checkCollisionWithWalls(Particle& particle) {
         for (auto& wall : walls) {
             sf::Vector2f D = wall.end - wall.start; // Directional vector of the wall
-            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall, assuming wall.end and wall.start are sf::Vector2f
+            sf::Vector2f N = { D.y, -D.x }; // Normal vector to the wall
 
             // Normalize N
             float length = std::sqrt(N.x * N.x + N.y * N.y);
@@ -113,71 +64,101 @@ public:
             N.y /= length;
 
             // Predict next position of the particle
-            sf::Vector2f nextPos(particle.x + particle.vx, particle.y + particle.vy);
+            sf::Vector2f nextPos(x + vx, y + vy);
 
-            // Implement actual collision detection here
             // If a collision is detected:
-            if (collisionDetected(particle, nextPos, wall)) {
+            if (collisionDetected(*this, nextPos, wall)) {
                 // Step 1: Calculate the original speed
-                float originalSpeed = std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+                float originalSpeed = std::sqrt(vx * vx + vy * vy);
 
                 // Step 2: Reflect velocity
-                float dotProduct = particle.vx * N.x + particle.vy * N.y;
-                particle.vx -= 2 * dotProduct * N.x;
-                particle.vy -= 2 * dotProduct * N.y;
+                float dotProduct = vx * N.x + vy * N.y;
+                vx -= 2 * dotProduct * N.x;
+                vy -= 2 * dotProduct * N.y;
 
                 // Step 3: Normalize the reflected velocity vector
-                float reflectedSpeed = std::sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
-                particle.vx = (particle.vx / reflectedSpeed) * originalSpeed;
-                particle.vy = (particle.vy / reflectedSpeed) * originalSpeed;
+                float reflectedSpeed = std::sqrt(vx * vx + vy * vy);
+                vx = (vx / reflectedSpeed) * originalSpeed;
+                vy = (vy / reflectedSpeed) * originalSpeed;
             }
 
         }
     }
 
-    const std::vector<Particle>& getParticles() const {
-        return particles;
+    float Min(float a, float b) {
+        return (a < b) ? a : b;
     }
 
-    const std::vector<Wall>& getWalls() const {
-        return walls;
+    float Max(float a, float b) {
+        return (a > b) ? a : b;
     }
 
-    void simulate(double deltaTime) {
-        //Assign each particle to a thread
+    float dot(const sf::Vector2f& a, const sf::Vector2f& b) {
+        return a.x * b.x + a.y * b.y;
+    }
 
-        for (auto& particle : particles) {
+    bool collisionDetected(const Particle& particle, const sf::Vector2f& nextPos, const Wall& wall) {
 
-            /*std::thread updateThread([&]() {
-                particle.updatePosition(deltaTime, width, height);
-            });*/
+        sf::Vector2f wallVector = wall.end - wall.start;
+        sf::Vector2f particlePosition(nextPos.x, nextPos.y);
+        sf::Vector2f wallStartToPoint = particlePosition - wall.start;
 
-            // Thread for checking collisions
-            /*std::thread collisionThread([&]() {
-                checkCollisionWithWalls(particle);
-            });*/
+        float wallLengthSquared = dot(wallVector, wallVector);
+        float t = Max(0.f, Min(1.f, dot(wallStartToPoint, wallVector) / wallLengthSquared));
+        sf::Vector2f projection = wall.start + t * wallVector;
 
-            // Wait for both threads to complete their tasks
-            /*updateThread.join();
-            collisionThread.join();*/
+        sf::Vector2f distVector = particlePosition - projection;
+        float distance = sqrt(distVector.x * distVector.x + distVector.y * distVector.y);
 
-            particle.updatePosition(deltaTime, width, height);
-            checkCollisionWithWalls(particle);
-            // Boundary checks and collision responses are now handled within updatePosition
-        }
+        return distance <= particle.radius;
     }
 };
+
+std::atomic<int> nextParticleIndex(0); // Global counter for the next particle to update
+std::condition_variable cv;
+std::mutex cv_m;
+bool ready = false; // Flag to signal threads to start processing
+bool done = false;  // Flag to indicate processing is done for the current frame
+
+void updateParticleWorker(std::vector<Particle>& particles, const std::vector<Wall>& walls, double deltaTime, double simWidth, double simHeight) {
+    while (!done) {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait(lk, [] { return ready || done; });
+        lk.unlock();
+
+        while (true) {
+            int index = nextParticleIndex.fetch_add(1);
+            if (index >= particles.size()) {
+                break;
+            }
+            particles[index].updatePosition(deltaTime, simWidth, simHeight, walls);
+        }
+    }
+}
+
+void startFrame() {
+    nextParticleIndex.store(0); // Reset the counter for the next frame
+    ready = true;
+    cv.notify_all();
+}
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
 
+    size_t threadCount = std::thread::hardware_concurrency(); // Use the number of concurrent threads supported by the hardware
+
+    std::vector<std::thread> threads;
+
+    std::vector<Particle> particles;
+    std::vector<Wall> walls;
+
+    double deltaTime = 1; // Time step for updating particle positions
+
     // Set the frame rate limit
     window.setFramerateLimit(60);
-    
-    sf::Clock clock; // Starts the clock for FPS calculation
-    sf::Clock displayClock; // Separate clock for controlling display update rate
-    unsigned int frames = 0;
-    unsigned int fps = 0;
+
+    sf::Clock clock; // Starts the clock for FPS calculation  
+    sf::Clock fpsUpdateClock; // Clock to update the FPS counter every 0.5 seconds
 
     sf::Font font;
     if (!font.loadFromFile("OpenSans-Regular.ttf")) {
@@ -194,7 +175,7 @@ int main() {
     // Check box to toggle visibility of input fields
     auto toggleCheckbox = tgui::CheckBox::create();
     toggleCheckbox->setPosition("10%", "1%");
-    toggleCheckbox->setText("Toggle Edit Boxes");
+    toggleCheckbox->setText("Toggle Input Boxes");
     gui.add(toggleCheckbox);
 
     auto renderer = toggleCheckbox->getRenderer();
@@ -212,29 +193,29 @@ int main() {
     auto X1PosEditBox = tgui::EditBox::create();
     X1PosEditBox->setPosition("10%", "12%");
     X1PosEditBox->setSize("18%", "6%");
-    X1PosEditBox->setDefaultText("X1 Coordinate");
+    X1PosEditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(X1PosEditBox);
 
     auto Y1PosEditBox = tgui::EditBox::create();
     Y1PosEditBox->setPosition("10%", "19%");
     Y1PosEditBox->setSize("18%", "6%");
-    Y1PosEditBox->setDefaultText("Y1 Coordinate");
+    Y1PosEditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(Y1PosEditBox);
 
     auto X2PosEditBox = tgui::EditBox::create();
     X2PosEditBox->setPosition("10%", "26%");
     X2PosEditBox->setSize("18%", "6%");
-    X2PosEditBox->setDefaultText("X2 Coordinate");
+    X2PosEditBox->setDefaultText("X2 Coordinate (0-1280)");
     gui.add(X2PosEditBox);
 
     auto Y2PosEditBox = tgui::EditBox::create();
     Y2PosEditBox->setPosition("10%", "33%");
     Y2PosEditBox->setSize("18%", "6%");
-    Y2PosEditBox->setDefaultText("Y2 Coordinate");
+    Y2PosEditBox->setDefaultText("Y2 Coordinate (0-720)");
     gui.add(Y2PosEditBox);
 
     auto addButton1 = tgui::Button::create("Add Batch Particle 1");
-    addButton1->setPosition("10%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton1->setPosition("10%", "40%"); // Adjust the percentage for layout
     addButton1->setSize("18%", "6%");
     gui.add(addButton1);
 
@@ -248,17 +229,17 @@ int main() {
     auto startAngleEditBox = tgui::EditBox::create();
     startAngleEditBox->setPosition("30%", "12%");
     startAngleEditBox->setSize("18%", "6%");
-    startAngleEditBox->setDefaultText("Start Angle");
+    startAngleEditBox->setDefaultText("Start Angle (0-360)");
     gui.add(startAngleEditBox);
 
     auto endAngleEditBox = tgui::EditBox::create();
     endAngleEditBox->setPosition("30%", "19%");
     endAngleEditBox->setSize("18%", "6%");
-    endAngleEditBox->setDefaultText("End Angle");
+    endAngleEditBox->setDefaultText("End Angle (0-360)");
     gui.add(endAngleEditBox);
 
     auto addButton2 = tgui::Button::create("Add Batch Particle 2");
-    addButton2->setPosition("30%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton2->setPosition("30%", "40%"); // Adjust the percentage for layout
     addButton2->setSize("18%", "6%");
     gui.add(addButton2);
 
@@ -282,7 +263,7 @@ int main() {
     gui.add(endVelocityEditBox);
 
     auto addButton3 = tgui::Button::create("Add Batch Particle 3");
-    addButton3->setPosition("50%", "40%"); // Adjust the percentage as needed based on your layout
+    addButton3->setPosition("50%", "40%"); // Adjust the percentage for layout
     addButton3->setSize("18%", "6%");
     gui.add(addButton3);
 
@@ -290,19 +271,19 @@ int main() {
     auto basicX1PosEditBox = tgui::EditBox::create();
     basicX1PosEditBox->setPosition("75%", "5%");
     basicX1PosEditBox->setSize("18%", "6%");
-    basicX1PosEditBox->setDefaultText("X1 Coordinate");
+    basicX1PosEditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(basicX1PosEditBox);
 
     auto basicY1PosEditBox = tgui::EditBox::create();
     basicY1PosEditBox->setPosition("75%", "12%");
     basicY1PosEditBox->setSize("18%", "6%");
-    basicY1PosEditBox->setDefaultText("Y1 Coordinate");
+    basicY1PosEditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(basicY1PosEditBox);
 
     auto basicAngleEditBox = tgui::EditBox::create();
     basicAngleEditBox->setPosition("75%", "19%");
     basicAngleEditBox->setSize("18%", "6%");
-    basicAngleEditBox->setDefaultText("Angle Directon");
+    basicAngleEditBox->setDefaultText("Angle Directon (0-360)");
     gui.add(basicAngleEditBox);
 
     auto basicVelocityEditBox = tgui::EditBox::create();
@@ -312,41 +293,39 @@ int main() {
     gui.add(basicVelocityEditBox);
 
     auto basicaddButton = tgui::Button::create("Add Particle");
-    basicaddButton->setPosition("75%", "33%"); // Adjust the percentage as needed based on your layout
+    basicaddButton->setPosition("75%", "40%"); // Adjust the percentage for layout
     basicaddButton->setSize("18%", "6%");
     gui.add(basicaddButton);
 
     // Wall Input Form 
     auto wallX1EditBox = tgui::EditBox::create();
-    wallX1EditBox->setPosition("75%", "40%");
+    wallX1EditBox->setPosition("75%", "47%");
     wallX1EditBox->setSize("18%", "6%");
-    wallX1EditBox->setDefaultText("X Position (0-1280)");
+    wallX1EditBox->setDefaultText("X1 Coordinate (0-1280)");
     gui.add(wallX1EditBox);
 
     auto wallY1EditBox = tgui::EditBox::create();
-    wallY1EditBox->setPosition("75%", "47%");
+    wallY1EditBox->setPosition("75%", "54%");
     wallY1EditBox->setSize("18%", "6%");
-    wallY1EditBox->setDefaultText("Y Position (0-720)");
+    wallY1EditBox->setDefaultText("Y1 Coordinate (0-720)");
     gui.add(wallY1EditBox);
 
     auto wallX2EditBox = tgui::EditBox::create();
-    wallX2EditBox->setPosition("75%", "54%");
+    wallX2EditBox->setPosition("75%", "61%");
     wallX2EditBox->setSize("18%", "6%");
-    wallX2EditBox->setDefaultText("X Position (0-1280)");
+    wallX2EditBox->setDefaultText("X2 Coordinate (0-1280)");
     gui.add(wallX2EditBox);
 
     auto wallY2EditBox = tgui::EditBox::create();
-    wallY2EditBox->setPosition("75%", "61%");
+    wallY2EditBox->setPosition("75%", "68%");
     wallY2EditBox->setSize("18%", "6%");
-    wallY2EditBox->setDefaultText("Y Position (0-720)");
+    wallY2EditBox->setDefaultText("Y2 Coordinate (0-720)");
     gui.add(wallY2EditBox);
 
     auto addWallButton = tgui::Button::create("Add Wall");
-    addWallButton->setPosition("75%", "68%"); // Adjust the percentage as needed based on your layout
+    addWallButton->setPosition("75%", "75%"); // Adjust the percentage for layout
     addWallButton->setSize("18%", "6%");
     gui.add(addWallButton);
-
-    Simulation sim(1280, 720);
 
     //Checkbox event handler
     toggleCheckbox->onChange([&](bool checked) {
@@ -412,8 +391,7 @@ int main() {
             wallY2EditBox->setVisible(true);
             addWallButton->setVisible(true);
         }
-     });
-    //sim.addParticle(Particle(640, 360, 45, 100, 10)); // Add a particle at the center of the window
+        });
 
     // Attach an event handler to the "Add Particle" button for Form 1
     addButton1->onPress([&]() {
@@ -428,6 +406,11 @@ int main() {
             float angle = 45.0f; // constant angle in degrees
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            if (x1 < 0 || x1 > 1280) throw std::invalid_argument("X1 coordinate must be between 0 and 1280.");
+            if (y1 < 0 || y1 > 720) throw std::invalid_argument("Y1 coordinate must be between 0 and 720.");
+            if (x2 < 0 || x2 > 1280) throw std::invalid_argument("X2 coordinate must be between 0 and 1280.");
+            if (y2 < 0 || y2 > 720) throw std::invalid_argument("Y2 coordinate must be between 0 and 720.");
+
             float xStep = (x2 - x1) / std::max(1, n - 1); // Calculate the x step between particles
             float yStep = (y2 - y1) / std::max(1, n - 1); // Calculate the y step between particles
 
@@ -436,8 +419,15 @@ int main() {
                 float yPos = y1 + i * yStep; // Calculate the y position for each particle
 
                 // Add each particle to the simulation
-                sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
+                particles.push_back(Particle(xPos, yPos, angle, velocity, 5));// radius is 10
             }
+
+            // Clear the edit boxes after adding particles
+            noParticles1->setText("");
+            X1PosEditBox->setText("");
+            Y1PosEditBox->setText("");
+            X2PosEditBox->setText("");
+            Y2PosEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
@@ -459,6 +449,10 @@ int main() {
             sf::Vector2f startPoint(640, 360); // start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            if (startTheta < 0 || startTheta > 360) throw std::invalid_argument("Start Theta must be positive and must be less than 360.");
+            if (endTheta < 0 || endTheta> 360) throw std::invalid_argument("End Theta must be positive and must be less than or equal 360.");
+            if (startTheta > endTheta) throw std::invalid_argument("Start Theta must be less than End Theta.");
+
 
             float angularStep = (n > 1) ? (endTheta - startTheta) / (n - 1) : 0;
 
@@ -471,15 +465,20 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 2)); // radius is 10
             }
+
+            // Clear the edit boxes after adding particles
+            noParticles2->setText("");
+            startAngleEditBox->setText("");
+            endAngleEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
-            std::cerr << "Invalid input: " << e.what() << '\n';        
+            std::cerr << "Invalid input: " << e.what() << '\n';
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            
+
         }
         });
 
@@ -489,19 +488,27 @@ int main() {
             int n = std::stoi(noParticles3->getText().toStdString()); // Number of particles
             float startVelocity = std::stof(startVelocityEditBox->getText().toStdString()); // Start velocity
             float endVelocity = std::stof(endVelocityEditBox->getText().toStdString()); // End velocity
-            float angle = 90.0f; // constant angle in degrees
+            float angle = 45.0f; // constant angle in degrees
             sf::Vector2f startPoint(400, 300); // constant start point
 
             if (n <= 0) throw std::invalid_argument("Number of particles must be positive.");
+            if (startVelocity <= 0) throw std::invalid_argument("Start Velocity must be greater than 0.");
+            if (endVelocity <= 0) throw std::invalid_argument("End Velocity must be greater than 0.");
+            if (startVelocity >= endVelocity) throw std::invalid_argument("Start Velocity must be less than End Velocity.");;
             float velocityStep = (endVelocity - startVelocity) / std::max(1, n - 1); // Calculate the velocity step between particles
 
             for (int i = 0; i < n; ++i) {
                 float velocity = startVelocity + i * velocityStep; // Calculate the velocity for each particle
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
-            
+
                 // Add each particle to the simulation
-                sim.addParticle(Particle(startPoint.x, startPoint.y, angle, velocity, 10)); // Assume radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 2)); // radius is 10
             }
+
+            // Clear the edit boxes after adding particles
+            noParticles3->setText("");
+            startVelocityEditBox->setText("");
+            endVelocityEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
@@ -518,18 +525,28 @@ int main() {
             float yPos = std::stof(basicY1PosEditBox->getText().toStdString()); // Y coordinate
             float angle = std::stof(basicAngleEditBox->getText().toStdString()); // Angle
             float velocity = std::stof(basicVelocityEditBox->getText().toStdString()); // Velocity
-            
-             // Add particle to the simulation
-             sim.addParticle(Particle(xPos, yPos, angle, velocity, 10)); // Assume radius is 10
-            
+
+            if (xPos < 0 || xPos > 1280) throw std::invalid_argument("X coordinate must be between 0 and 1280.");
+            if (yPos < 0 || yPos > 720) throw std::invalid_argument("Y coordinate must be between 0 and 720.");
+            if (angle < 0 || angle > 360) throw std::invalid_argument("Angle must be between 0 and 360.");
+            if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
+
+            // Add particle to the simulation
+            particles.push_back(Particle(xPos, yPos, angle, velocity, 2)); // radius is 10
+
+            // Clear the edit boxes after adding particles
+            basicX1PosEditBox->setText("");
+            basicY1PosEditBox->setText("");
+            basicAngleEditBox->setText("");
+            basicVelocityEditBox->setText("");
         }
         catch (const std::invalid_argument& e) {
             std::cerr << "Invalid input: " << e.what() << '\n';
-            
+
         }
         catch (const std::out_of_range& e) {
             std::cerr << "Input out of range: " << e.what() << '\n';
-            
+
         }
         });
 
@@ -552,7 +569,7 @@ int main() {
                 throw std::invalid_argument("Wall start and end points cannot be the same.");
             }
 
-            sim.addWall(Wall(x1, y1, x2, y2));
+            walls.push_back(Wall(x1, y1, x2, y2));
 
             // Reset the wall input fields
             wallX1EditBox->setText("");
@@ -572,16 +589,26 @@ int main() {
         }
         });
 
+    // Create worker threads
+    for (size_t i = 0; i < threadCount; ++i) {
+        threads.emplace_back(updateParticleWorker, std::ref(particles), std::ref(walls), deltaTime, 1280.0, 720.0);
+    }
 
     while (window.isOpen()) {
+
+        nextParticleIndex.store(0); // Reset the counter for the next frame
+
         //compute framerate
         float currentTime = clock.restart().asSeconds();
         float fps = 1.0f / (currentTime);
-        std::stringstream ss;
-        ss.precision(0); // Set precision to zero
-        ss << "FPS: " << std::fixed << fps; // Use std::fixed to avoid scientific notation
 
-        fpsText.setString(ss.str());
+        if (fpsUpdateClock.getElapsedTime().asSeconds() >= 0.5f) {
+            std::stringstream ss;
+            ss.precision(0); // Set precision to zero
+            ss << "FPS: " << std::fixed << fps;
+            fpsText.setString(ss.str());
+            fpsUpdateClock.restart(); // Reset the fpsUpdateClock for the next 0.5-second interval
+        }
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -593,15 +620,30 @@ int main() {
 
         sim.simulate(1); // Advance the simulation
 
+        frames++; // Increment frame count for this second
+
+        // Calculate FPS
+        if (displayClock.getElapsedTime().asSeconds() >= 0.5f) {
+            fps = static_cast<unsigned int>(frames / displayClock.getElapsedTime().asSeconds());
+            frames = 0;
+            displayClock.restart();
+
+            // Update the FPS text
+            std::stringstream ss;
+            ss << "FPS: " << fps;
+            fpsText.setString(ss.str());
+        }
+
         window.clear();
-        for (const auto& particle : sim.getParticles()) {
+        //Draw particles
+        for (const auto& particle : particles) {
             sf::CircleShape shape(particle.radius);
             shape.setFillColor(sf::Color::Green);
             shape.setPosition(static_cast<float>(particle.x - particle.radius), static_cast<float>(particle.y - particle.radius));
             window.draw(shape);
         }
         // Draw walls
-        for (const auto& wall : sim.getWalls()) {
+        for (const auto& wall : walls) {
             sf::VertexArray line(sf::Lines, 2);
             line[0].position = sf::Vector2f(wall.start.x, wall.start.y);
             line[0].color = sf::Color::White;
@@ -613,8 +655,27 @@ int main() {
         window.draw(fpsText); // Draw the FPS counter on the window
         gui.draw(); // Draw the GUI
         window.display();
-        
+
+    }
+
+    // Cleanup: Signal threads to exit and join them
+    done = true;
+    ready = true; // Ensure threads are not stuck waiting
+    cv.notify_all();
+    for (auto& thread : threads) {
+        thread.join();
     }
 
     return 0;
 }
+
+/*
+* Using particle vector
+* have a global variable to track the index
+* use a mutex
+* get particle from the vector
+* increment the global variable
+* unlock the mutex
+* update the particle
+* after completing all particles, reset global variable
+*/
