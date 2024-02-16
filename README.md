@@ -16,13 +16,11 @@ This Particle Simulator is a graphical application designed to simulate the beha
 
 To compile and run the Particle Simulator, follow these steps:
 
-1. **Install SFML and TGUI:** Ensure that SFML and TGUI are installed on your system. You can download them from [SFML Downloads](https://www.sfml-dev.org/download.php) and [TGUI Downloads](https://tgui.eu/download/) respectively.
+1. **Clone the Repository:** Clone this repository to your local machine using `git clone`, or download the source code as a ZIP file and extract it.
 
-2. **Clone the Repository:** Clone this repository to your local machine using `git clone`, or download the source code as a ZIP file and extract it.
+2. **Compile the Application:** Navigate to the directory containing the source code and compile the application.
 
-3. **Compile the Application:** Navigate to the directory containing the source code and compile the application.
-
-4. **Run the Application:** Once compiled, you can run the application
+3. **Run the Application:** Once compiled, you can run the application
 
 ## Usage
 
