@@ -114,103 +114,21 @@ public:
     }
 };
 
-std::atomic<int> nextParticleIndex(0); // Tracks the next particle index to be updated
-std::vector<Particle> particles; // Your particle vector
-std::mutex indexMutex; // Protects access to nextParticleIndex
-
-class ThreadPool {
-public:
-    ThreadPool(size_t threads);
-    template<class F, class... Args>
-    void enqueue(F&& f, Args&&... args);
-    ~ThreadPool();
-
-private:
-    std::vector<std::thread> workers;
-    std::queue<std::function<void()>> tasks;
-
-    std::mutex queue_mutex;
-    std::condition_variable condition;
-    bool stop;
-};
-
-// Constructor
-ThreadPool::ThreadPool(size_t threads) : stop(false) {
-    for (size_t i = 0; i < threads; ++i)
-        workers.emplace_back([this] {
-        for (;;) {
-            std::function<void()> task;
-            {
-                std::unique_lock<std::mutex> lock(this->queue_mutex);
-                this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
-                if (this->stop && this->tasks.empty())
-                    return;
-                task = std::move(this->tasks.front());
-                this->tasks.pop();
-            }
-            task();
-        }
-            });
-}
-
-// Add new work item to the pool
-template<class F, class... Args>
-void ThreadPool::enqueue(F&& f, Args&&... args) {
-    auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-
-        // don't allow enqueueing after stopping the pool
-        if (stop)
-            throw std::runtime_error("enqueue on stopped ThreadPool");
-
-        tasks.emplace(task);
-    }
-    condition.notify_one();
-}
-
-// Destructor joins all threads
-ThreadPool::~ThreadPool() {
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        stop = true;
-    }
-    condition.notify_all();
-    for (std::thread& worker : workers)
-        worker.join();
-}
-
-void updateParticlesTask(double deltaTime, std::vector<Wall> walls) {
-
-    while (true) {
-        int index = -1;
-
-        {
-            std::lock_guard<std::mutex> guard(indexMutex);
-            if (nextParticleIndex < particles.size()) {
-                index = nextParticleIndex++;
-            }
-            else {
-                break; // No more particles to update
-            }
-        }
-
-        if (index != -1) {
-            // Update the particle at index
-            particles[index].updatePosition(deltaTime, 1280, 720, walls); // Provide necessary arguments
-        }
+// Worker function for updating a range of particles
+void updateParticles(std::vector<Particle>& particles, const std::vector<Wall>& walls, double deltaTime, double simWidth, double simHeight, int startIdx, int endIdx) {
+    for (int i = startIdx; i <= endIdx; ++i) {
+        particles[i].updatePosition(deltaTime, simWidth, simHeight, walls);
     }
 }
-
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Simulator");
 
-    ThreadPool pool(std::thread::hardware_concurrency()); // Use the number of concurrent threads supported by the hardware
-
     size_t threadCount = std::thread::hardware_concurrency(); // Use the number of concurrent threads supported by the hardware
 
-    // std::vector<Particle> particles;
+    std::vector<std::thread> threads;
+
+    std::vector<Particle> particles;
     std::vector<Wall> walls;
 
     double deltaTime = 1; // Time step for updating particle positions
@@ -653,8 +571,6 @@ int main() {
 
     while (window.isOpen()) {
 
-        nextParticleIndex.store(0);
-
         //compute framerate
         float currentTime = clock.restart().asSeconds();
         float fps = 1.0f / (currentTime);
@@ -675,12 +591,37 @@ int main() {
                 window.close();
         }
 
-        // Enqueue update tasks. 
-        for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
-            pool.enqueue([deltaTime, &walls]() {
-                updateParticlesTask(deltaTime, walls);
-                });
+        int particlesPerThread = particles.size() / threadCount;
+        int extraParticles = particles.size() % threadCount;
+
+        // Clear previously used threads
+        threads.clear();
+
+        int startIdx = 0;
+        for (size_t i = 0; i < threadCount; ++i) {
+            int endIdx = startIdx + particlesPerThread - 1;
+            if (extraParticles > 0) {
+                endIdx += 1;
+                extraParticles -= 1;
+            }
+
+            // Create and launch threads
+            threads.emplace_back(updateParticles, std::ref(particles), std::ref(walls), deltaTime, 1280.0, 720.0, startIdx, endIdx);
+
+            startIdx = endIdx + 1;
         }
+
+        // Wait for all threads to complete
+        for (auto& thread : threads) {
+            thread.join();
+        }
+
+        //for (auto& particle : particles) {
+
+        //    // Single Threaded Version
+        //    particle.updatePosition(deltaTime, 1280, 720, walls);
+
+        //}
 
 
         window.clear();
@@ -709,8 +650,6 @@ int main() {
 
     return 0;
 }
-
-
 
 /*
 * Using particle vector
