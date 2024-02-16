@@ -104,8 +104,16 @@ public:
 
         // Check if intersection point is within the segment and particle's path
         if (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f) {
-            collisionPoint.x = wallStart.x + t * wallVector.x;
-            collisionPoint.y = wallStart.y + t * wallVector.y;
+            // Calculate the collision point without considering the radius
+            sf::Vector2f rawCollisionPoint = wallStart + t * wallVector;
+
+            // Adjust the collision point for the particle's radius
+            sf::Vector2f wallNormal(-wallVector.y, wallVector.x);
+            float normalLength = std::sqrt(wallNormal.x * wallNormal.x + wallNormal.y * wallNormal.y);
+            wallNormal /= normalLength; // Normalize the wall normal
+
+            // Push the collision point out by the radius in the direction of the wall normal
+            collisionPoint = rawCollisionPoint + sf::Vector2f(wallNormal.x * particle.radius, wallNormal.y * particle.radius);
             return true;
         }
 
