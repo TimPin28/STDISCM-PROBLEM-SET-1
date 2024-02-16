@@ -15,9 +15,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-std::atomic<int> nextParticleIndex(0); // Atomic counter for the next particle to update
-
-
 class Wall {
 public:
     sf::Vector2f start, end;
@@ -117,17 +114,32 @@ public:
     }
 };
 
-// Worker function for updating particles
+std::atomic<int> nextParticleIndex(0); // Global counter for the next particle to update
+std::condition_variable cv;
+std::mutex cv_m;
+bool ready = false; // Flag to signal threads to start processing
+bool done = false;  // Flag to indicate processing is done for the current frame
+
 void updateParticleWorker(std::vector<Particle>& particles, const std::vector<Wall>& walls, double deltaTime, double simWidth, double simHeight) {
-    while (true) {
-        int index = nextParticleIndex.fetch_add(1); // Atomically claim a particle to update
+    while (!done) {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait(lk, [] { return ready || done; });
+        lk.unlock();
 
-        if (index >= particles.size()) {
-            break; // All particles have been claimed
+        while (true) {
+            int index = nextParticleIndex.fetch_add(1);
+            if (index >= particles.size()) {
+                break;
+            }
+            particles[index].updatePosition(deltaTime, simWidth, simHeight, walls);
         }
-
-        particles[index].updatePosition(deltaTime, simWidth, simHeight, walls);
     }
+}
+
+void startFrame() {
+    nextParticleIndex.store(0); // Reset the counter for the next frame
+    ready = true;
+    cv.notify_all();
 }
 
 int main() {
@@ -453,7 +465,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians              
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 2)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -490,7 +502,7 @@ int main() {
                 double angleRad = angle * (M_PI / 180.0); // Convert angle from degrees to radians
 
                 // Add each particle to the simulation
-                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 5)); // radius is 10
+                particles.push_back(Particle(startPoint.x, startPoint.y, angle, velocity, 2)); // radius is 10
             }
 
             // Clear the edit boxes after adding particles
@@ -520,7 +532,7 @@ int main() {
             if (velocity <= 0) throw std::invalid_argument("Velocity must be greater than 0.");
 
             // Add particle to the simulation
-            particles.push_back(Particle(xPos, yPos, angle, velocity, 5)); // radius is 10
+            particles.push_back(Particle(xPos, yPos, angle, velocity, 2)); // radius is 10
 
             // Clear the edit boxes after adding particles
             basicX1PosEditBox->setText("");
@@ -577,6 +589,10 @@ int main() {
         }
         });
 
+    // Create worker threads
+    for (size_t i = 0; i < threadCount; ++i) {
+        threads.emplace_back(updateParticleWorker, std::ref(particles), std::ref(walls), deltaTime, 1280.0, 720.0);
+    }
 
     while (window.isOpen()) {
 
@@ -602,16 +618,8 @@ int main() {
                 window.close();
         }
 
-        // Launch threads
-        for (size_t i = 0; i < threadCount; ++i) {
-            threads.emplace_back(updateParticleWorker, std::ref(particles), std::ref(walls), deltaTime, 1280.0, 720.0);
-        }
-
-        // Wait for all threads to complete
-        for (auto& thread : threads) {
-            thread.join();
-        }
-        threads.clear(); // Clear the thread objects for the next iteration
+        startFrame(); // Signal threads to start processing
+        ready = false; // Threads are now processing
 
 
         //for (auto& particle : particles) {
@@ -644,6 +652,14 @@ int main() {
         gui.draw(); // Draw the GUI
         window.display();
 
+    }
+
+    // Cleanup: Signal threads to exit and join them
+    done = true;
+    ready = true; // Ensure threads are not stuck waiting
+    cv.notify_all();
+    for (auto& thread : threads) {
+        thread.join();
     }
 
     return 0;
